@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.7.1</title>
+<title>Spider Solitaire 1.0J.7.2</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -77,7 +77,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.7.1</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.7.2</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -519,7 +519,7 @@ remember();startClock();animating=true;selected=null;
 const br=board.getBoundingClientRect(), sr=stockEl.getBoundingClientRect(), flyers=[];
 for(let c=0;c<10;c++){
  const col=colEl(c), tr=col.getBoundingClientRect(), f=document.createElement('div');
- f.className='card back';f.style.position='absolute';f.style.zIndex=1600+c;f.style.width=tr.width+'px';
+ f.className='card back';f.style.background=cardBackStyle(prefs.cardBack);f.style.position='absolute';f.style.zIndex=1600+c;f.style.width=tr.width+'px';
  f.style.left=(sr.left-br.left+38)+'px';f.style.top=(sr.top-br.top+2)+'px';board.appendChild(f);flyers.push(f);
  const tx=(tr.left-br.left)-(sr.left-br.left+38), ty=(tr.top-br.top+(state.cols[c].length?offsets(state.cols[c]).slice(-1)[0]+27:0))-(sr.top-br.top+2);
  f.animate([{transform:'translate(0,0)'},{transform:`translate(${tx}px,${ty}px)`}],{duration:190,delay:c*32,easing:'cubic-bezier(.2,.8,.25,1)',fill:'forwards'});
@@ -551,7 +551,7 @@ newBtn.onclick=askNew;newBottom.onclick=askNew;
 $('settings').onclick=()=>{cancelHint();showSettings()};
 
 let devPressTimer=null;
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.7.1');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.7.2');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
