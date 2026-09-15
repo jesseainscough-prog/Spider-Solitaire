@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.3</title>
+<title>Spider Solitaire 1.0J.3.1</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
@@ -37,7 +37,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .motion-stack.hinting{filter:drop-shadow(0 0 7px rgba(232,200,121,.9))}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(15px);background:#000d;color:#fff;padding:9px 13px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.18s;z-index:5000}.toast.show{opacity:1;transform:translateX(-50%)}
 @media(max-width:430px){body{padding:0}.game-shell{border-radius:0;min-height:100dvh}.topbar{padding:9px 7px;gap:7px}.brand-main{font-size:17px}.stats{gap:7px}.stat{min-width:38px}.stat strong{font-size:15px}.icon-btn{width:36px;height:36px}.subbar{padding:5px 7px}.board{padding-left:2px;padding-right:2px}.columns{gap:2px}.column{height:440px}.card.face,.motion-card{padding:2px 1px}}
-.court-card-art{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block;pointer-events:none}.complete-fly{position:absolute;z-index:1900;pointer-events:none;filter:drop-shadow(0 3px 4px #0008)}.complete-card{animation:completePop .24s ease-out}@keyframes completePop{0%{transform:scale(.55);opacity:.25}100%{transform:scale(1);opacity:1}}
+.court-card-art{position:absolute;left:-13%;top:-8%;width:126%;height:126%;object-fit:cover;object-position:center 38%;display:block;pointer-events:none}.complete-fly{position:absolute;z-index:1900;pointer-events:none;filter:drop-shadow(0 3px 4px #0008)}.complete-card{animation:none}@keyframes completePop{0%{transform:scale(.55);opacity:.25}100%{transform:scale(1);opacity:1}}
 .win-overlay{position:absolute;inset:0;z-index:3000;background:#001d14cc;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 .win-panel{width:min(82%,360px);padding:24px 18px;border:1px solid #e8c879;border-radius:18px;background:#063f2e;text-align:center;box-shadow:0 20px 50px #0008}
 .win-panel h2{margin:0 0 8px;color:#efd58e;font:700 30px Georgia,serif}.win-panel p{margin:7px 0;color:#fff}.win-panel button{margin-top:14px;padding:11px 24px;border-radius:12px;border:1px solid #efd58e;background:#e5bd65;color:#173326;font-weight:800}
@@ -55,7 +55,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.3</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.3.1</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -99,7 +99,13 @@ function newGame(){cancelHint();stopClock();started=false;history=[];selected=nu
 function movable(c,i){let a=state.cols[c];if(i<0||!a[i]?.faceUp)return false;for(let x=i;x<a.length-1;x++)if(!a[x+1].faceUp||val(a[x].rank)!==val(a[x+1].rank)+1)return false;return true}
 function legal(f,i,t){if(f===t||!movable(f,i))return false;let m=state.cols[f][i],d=state.cols[t];return !d.length||val(d[d.length-1].rank)===val(m.rank)+1}
 function flip(c){let a=state.cols[c];if(a.length&&!a[a.length-1].faceUp){a[a.length-1].faceUp=true;a[a.length-1]._justFlipped=true}}
-function complete(c){let a=state.cols[c];if(a.length<13)return false;let s=a.slice(-13);if(!s.every(x=>x.faceUp))return false;for(let i=0;i<12;i++)if(val(s[i].rank)!==val(s[i+1].rank)+1)return false;a.splice(-13);state.completed++;flip(c);state._completedCol=c;return true}
+function complete(c){
+ let a=state.cols[c];if(a.length<13)return false;
+ let s=a.slice(-13);if(!s.every(x=>x.faceUp))return false;
+ for(let i=0;i<12;i++)if(val(s[i].rank)!==val(s[i+1].rank)+1)return false;
+ state._pendingComplete={col:c,index:a.length-13,cards:s.slice()};
+ return true
+}
 
 function celebrateWin(){
  const r=board.getBoundingClientRect(), ranks=['A','K','Q','J','10','9','8','7','6','5','4','3','2'];
@@ -117,15 +123,41 @@ function celebrateWin(){
  },1250);
 }
 
-function post(){let completedNow=false;for(let c=0;c<10;c++)while(complete(c))completedNow=true;if(completedNow){status.textContent='Suit completed!';let badge=document.createElement('div');badge.className='complete-fly complete-card';badge.textContent='K→A ♠';badge.style.left=(12+Math.min(state.completed-1,7)*27)+'px';badge.style.top='14px';board.appendChild(badge);badge.animate([{transform:'translateY(-22px) scale(1.18)',opacity:.4},{transform:'translateY(0) scale(1)',opacity:1}],{duration:300,easing:'ease-out'});setTimeout(()=>badge.remove(),340)}if(state.completed===8){stopClock();toast('You won!');status.textContent='Game complete!';render();celebrateWin();return}render()}
-function spacingFor(a){
- const boardH=board?.clientHeight||620, usable=Math.max(330,boardH-160), cardH=62;
- let natural=a.reduce((n,c)=>n+(c.faceUp?27:11),0)+cardH;
- if(natural<=usable)return {up:27,down:11};
- let excess=natural-usable, faces=a.filter(c=>c.faceUp).length, downs=a.length-faces;
- let up=27,down=11,weight=faces+downs*.45;
- if(weight>0){let cut=excess/weight;up=Math.max(14,27-cut);down=Math.max(7,11-cut*.45)}
- return {up,down};
+async function animateCompletion(pc){
+ render();
+ let h=motionStack(pc.col,pc.index),src=cardEl(pc.col,pc.index);
+ if(!h||!src)return;
+ let sr=src.getBoundingClientRect(),br=board.getBoundingClientRect();
+ let slot=completedEl.children[Math.min(state.completed,7)];
+ let tr=slot.getBoundingClientRect();
+ let dx=(tr.left-br.left)-(sr.left-br.left),dy=(tr.top-br.top)-(sr.top-br.top);
+ state.cols[pc.col].slice(pc.index).forEach((_,n)=>{let e=cardEl(pc.col,pc.index+n);if(e)e.style.visibility='hidden'});
+ await h.animate([
+  {transform:'translate(0,0) scale(1)',opacity:1,offset:0},
+  {transform:`translate(${dx*.72}px,${dy*.72}px) scale(.78)`,opacity:1,offset:.72},
+  {transform:`translate(${dx}px,${dy}px) scale(.42)`,opacity:.96,offset:1}
+ ],{duration:900,easing:'cubic-bezier(.22,.72,.2,1)',fill:'forwards'}).finished.catch(()=>{});
+ h.remove();
+}
+async function post(){
+ let won=false;
+ for(let c=0;c<10;c++){
+  while(true){
+   state._pendingComplete=null;
+   if(!complete(c))break;
+   let pc=state._pendingComplete;
+   await animateCompletion(pc);
+   state.cols[c].splice(pc.index,13);
+   state.completed++;
+   flip(c);
+   state._pendingComplete=null;
+   status.textContent='Suit completed!';
+   render();
+   await sleep(180);
+  }
+ }
+ if(state.completed===8){stopClock();toast('You won!');status.textContent='Game complete!';render();celebrateWin();won=true}
+ return won
 }
 function offsets(a){let y=0,o=[],sp=spacingFor(a);for(const c of a){o.push(y);y+=c.faceUp?sp.up:sp.down}return o}
 function runLengthAt(col,index){
@@ -225,9 +257,9 @@ state.cols[m.from].slice(m.index).forEach((_,n)=>{let e=cardEl(m.from,m.index+n)
 let underIndex=m.index-1,under=underIndex>=0?state.cols[m.from][underIndex]:null,underEl=underIndex>=0?cardEl(m.from,underIndex):null;
 if(under&&!under.faceUp&&underEl){under.faceUp=true;underEl.className='card face early-flip';underEl.innerHTML=faceHTML(under)}
 await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:160,easing:'cubic-bezier(.2,.85,.25,1)',fill:'forwards'}).finished.catch(()=>{});
-commit();h.remove();animating=false
+await commit();h.remove();animating=false
 }
-async function perform(f,i,t,msg='Moved.'){if(animating||!legal(f,i,t))return false;cancelHint();let m={from:f,index:i,to:t};remember();startClock();await animateReal(m,()=>{state.cols[t].push(...state.cols[f].splice(i));flip(f);state.moves++;selected=null;status.textContent=msg;post()});return true}
+async function perform(f,i,t,msg='Moved.'){if(animating||!legal(f,i,t))return false;cancelHint();let m={from:f,index:i,to:t};remember();startClock();await animateReal(m,async()=>{state.cols[t].push(...state.cols[f].splice(i));flip(f);state.moves++;selected=null;status.textContent=msg;await post()});return true}
 function smart(c,i){if(hintRun)cancelHint();if(animating)return;if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';return}let m=best(c,i);if(m)perform(c,i,m.to,'Smart move completed.');else{selected={col:c,index:i};status.textContent='No automatic move found. Tap a destination or drag.';render()}}
 function tapDest(c){if(selected)perform(selected.col,selected.index,c,'Manual move completed.')}
 async function deal(){
