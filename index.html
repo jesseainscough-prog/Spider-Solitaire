@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.3.4</title>
+<title>Spider Solitaire 1.0J.3.5</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
@@ -37,7 +37,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .motion-stack.hinting{filter:drop-shadow(0 0 7px rgba(232,200,121,.9))}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(15px);background:#000d;color:#fff;padding:9px 13px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.18s;z-index:5000}.toast.show{opacity:1;transform:translateX(-50%)}
 @media(max-width:430px){body{padding:0}.game-shell{border-radius:0;min-height:100dvh}.topbar{padding:9px 7px;gap:7px}.brand-main{font-size:17px}.stats{gap:7px}.stat{min-width:38px}.stat strong{font-size:15px}.icon-btn{width:36px;height:36px}.subbar{padding:5px 7px}.board{padding-left:2px;padding-right:2px}.columns{gap:2px}.column{height:440px}.card.face,.motion-card{padding:2px 1px}}
-.court-index{position:absolute;left:4%;top:2%;z-index:3;width:28%;display:flex;flex-direction:column;align-items:center;line-height:.78;color:#111;pointer-events:none}.court-index span{font-family:Georgia,'Times New Roman',serif;font-size:27px;font-weight:800}.court-index b{font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;margin-top:5px}.court-card-art{position:absolute;left:22%;top:12%;width:103%;height:103%;object-fit:cover;object-position:47% 38%;display:block;pointer-events:none}.complete-fly{position:absolute;z-index:1900;pointer-events:none;filter:drop-shadow(0 3px 4px #0008)}.complete-card{animation:none}@keyframes completePop{0%{transform:scale(.55);opacity:.25}100%{transform:scale(1);opacity:1}}
+.court-index{position:absolute;left:4%;top:2%;z-index:3;width:28%;display:flex;flex-direction:column;align-items:center;line-height:.78;color:#111;pointer-events:none}.court-index span{font-family:Georgia,'Times New Roman',serif;font-size:30px;font-weight:800}.court-index b{font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:700;margin-top:5px}.court-card-art{position:absolute;left:25%;top:17%;width:108%;height:108%;object-fit:cover;object-position:55% 50%;clip-path:inset(8% 0 0 12%);display:block;pointer-events:none}.complete-fly{position:absolute;z-index:1900;pointer-events:none;filter:drop-shadow(0 3px 4px #0008)}.complete-card{animation:none}@keyframes completePop{0%{transform:scale(.55);opacity:.25}100%{transform:scale(1);opacity:1}}
 .win-overlay{position:absolute;inset:0;z-index:3000;background:#001d14cc;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 .win-panel{width:min(82%,360px);padding:24px 18px;border:1px solid #e8c879;border-radius:18px;background:#063f2e;text-align:center;box-shadow:0 20px 50px #0008}
 .win-panel h2{margin:0 0 8px;color:#efd58e;font:700 30px Georgia,serif}.win-panel p{margin:7px 0;color:#fff}.win-panel button{margin-top:14px;padding:11px 24px;border-radius:12px;border:1px solid #efd58e;background:#e5bd65;color:#173326;font-weight:800}
@@ -55,7 +55,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.3.4</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.3.5</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -283,9 +283,12 @@ for(let c=0;c<10;c++){
  const tx=(tr.left-br.left)-(sr.left-br.left+38), ty=(tr.top-br.top+(state.cols[c].length?offsets(state.cols[c]).slice(-1)[0]+27:0))-(sr.top-br.top+2);
  f.animate([{transform:'translate(0,0)'},{transform:`translate(${tx}px,${ty}px)`}],{duration:190,delay:c*32,easing:'cubic-bezier(.2,.8,.25,1)',fill:'forwards'});
 }
-await sleep(500);flyers.forEach(f=>f.remove());
+await sleep(500);
 for(let c=0;c<10;c++){let x=state.stock.pop();x.faceUp=true;state.cols[c].push(x)}
-state.moves++;status.textContent='Dealt one new card to every column.';await post();animating=false
+state.moves++;status.textContent='Dealt one new card to every column.';
+render();
+flyers.forEach(f=>f.remove());
+await post();render();animating=false
 }
 function render(){columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.innerHTML=faceHTML(card);e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>pointerUp(ev,ci,i))}col.appendChild(e)});col.addEventListener('pointerup',e=>{if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});let deals=Math.floor(state.stock.length/10);stockEl.innerHTML='';for(let i=0;i<deals;i++){let s=document.createElement('div');s.className='stock-card';s.style.left=(i*10)+'px';s.style.top='2px';s.style.zIndex=i+1;stockEl.appendChild(s)}stockControl.disabled=!deals;stockControl.setAttribute('aria-label',deals?`Deal next row. ${deals} deals remaining`:'No deals remaining');completedEl.innerHTML='';for(let i=0;i<8;i++){let c=document.createElement('div');c.className=i<state.completed?'complete-card':'complete-slot';c.textContent=i<state.completed?'K♠':'♠';completedEl.appendChild(c)}undoBtn.disabled=!history.length;stats();setTimeout(()=>state.cols.forEach(col=>col.forEach(card=>delete card._justFlipped)),100)}
 function pointerDown(e,c,i,el){if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;if(!movable(c,i))return;pointer={id:e.pointerId,c,i,x:e.clientX,y:e.clientY,drag:false,el,h:null,dx:0,dy:0};el.setPointerCapture?.(e.pointerId);document.addEventListener('pointermove',pointerMove,{passive:false})}
