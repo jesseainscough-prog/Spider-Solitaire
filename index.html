@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.3.9</title>
+<title>Spider Solitaire 1.0J.3.10</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
@@ -41,7 +41,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .court-index{position:absolute;left:4%;top:4%;z-index:3;width:25%;color:#111;line-height:.84;text-align:center}
 .court-index span{display:block;font:800 21px Georgia,'Times New Roman',serif}
 .court-index b{display:block;font:800 18px Georgia,'Times New Roman',serif;margin-top:4px}
-.court-portrait{position:absolute;left:27%;top:4%;width:82%;height:101%;object-fit:cover;object-position:52% 8%;display:block;border-radius:2px}.complete-fly{position:absolute;z-index:1900;pointer-events:none;filter:drop-shadow(0 3px 4px #0008)}.complete-card{animation:none}@keyframes completePop{0%{transform:scale(.55);opacity:.25}100%{transform:scale(1);opacity:1}}
+.court-portrait{position:absolute;left:29%;top:6%;width:78%;height:98%;object-fit:cover;object-position:53% 10%;display:block;border-radius:2px}.complete-fly{position:absolute;z-index:1900;pointer-events:none;filter:drop-shadow(0 3px 4px #0008)}.complete-card{animation:none}@keyframes completePop{0%{transform:scale(.55);opacity:.25}100%{transform:scale(1);opacity:1}}
 .win-overlay{position:absolute;inset:0;z-index:3000;background:#001d14cc;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 .win-panel{width:min(82%,360px);padding:24px 18px;border:1px solid #e8c879;border-radius:18px;background:#063f2e;text-align:center;box-shadow:0 20px 50px #0008}
 .win-panel h2{margin:0 0 8px;color:#efd58e;font:700 30px Georgia,serif}.win-panel p{margin:7px 0;color:#fff}.win-panel button{margin-top:14px;padding:11px 24px;border-radius:12px;border:1px solid #efd58e;background:#e5bd65;color:#173326;font-weight:800}
@@ -59,7 +59,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.3.9</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.3.10</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -130,19 +130,40 @@ function celebrateWin(){
 
 async function animateCompletion(pc){
  render();
- let h=motionStack(pc.col,pc.index),src=cardEl(pc.col,pc.index);
- if(!h||!src)return;
- let sr=src.getBoundingClientRect(),br=board.getBoundingClientRect();
+ let br=board.getBoundingClientRect();
  let slot=completedEl.children[Math.min(state.completed,7)];
+ if(!slot)return;
  let tr=slot.getBoundingClientRect();
- let dx=(tr.left-br.left)-(sr.left-br.left),dy=(tr.top-br.top)-(sr.top-br.top);
- state.cols[pc.col].slice(pc.index).forEach((_,n)=>{let e=cardEl(pc.col,pc.index+n);if(e)e.style.visibility='hidden'});
- await h.animate([
-  {transform:'translate(0,0) scale(1)',opacity:1,offset:0},
-  {transform:`translate(${dx*.72}px,${dy*.72}px) scale(.78)`,opacity:1,offset:.72},
-  {transform:`translate(${dx}px,${dy}px) scale(.42)`,opacity:.96,offset:1}
- ],{duration:900,easing:'cubic-bezier(.22,.72,.2,1)',fill:'forwards'}).finished.catch(()=>{});
- h.remove();
+ let targetX=tr.left-br.left+tr.width/2;
+ let targetY=tr.top-br.top+tr.height/2;
+ let flyers=[];
+ for(let n=0;n<13;n++){
+  let src=cardEl(pc.col,pc.index+n);
+  if(!src)continue;
+  let sr=src.getBoundingClientRect();
+  let f=document.createElement('div');
+  f.className='motion-card complete-fly';
+  f.style.position='absolute';
+  f.style.left=(sr.left-br.left)+'px';
+  f.style.top=(sr.top-br.top)+'px';
+  f.style.width=sr.width+'px';
+  f.style.height=sr.height+'px';
+  f.style.zIndex=1900+n;
+  f.innerHTML=faceHTML(pc.cards[n]);
+  board.appendChild(f);
+  src.style.visibility='hidden';
+  let sx=sr.left-br.left,sy=sr.top-br.top;
+  let dx=targetX-(sx+sr.width/2),dy=targetY-(sy+sr.height/2);
+  let arc=-26-Math.min(34,Math.abs(dx)*.08);
+  let anim=f.animate([
+   {transform:'translate(0,0) scale(1)',opacity:1,offset:0},
+   {transform:`translate(${dx*.52}px,${dy*.42+arc}px) scale(.88)`,opacity:1,offset:.52},
+   {transform:`translate(${dx}px,${dy}px) scale(.40)`,opacity:1,offset:1}
+  ],{duration:720,delay:n*55,easing:'cubic-bezier(.2,.72,.22,1)',fill:'forwards'});
+  flyers.push({f,anim});
+ }
+ await Promise.all(flyers.map(x=>x.anim.finished.catch(()=>{})));
+ flyers.forEach(x=>x.f.remove());
 }
 async function post(){
  let won=false;
