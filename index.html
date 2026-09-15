@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.7</title>
+<title>Spider Solitaire 1.0J.7.1</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -77,7 +77,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.7</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.7.1</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -128,7 +128,7 @@ function recordFinishedGame(won){
  s.history.unshift({won,score,moves:state.moves,time:state.elapsed,at:Date.now()});s.history=s.history.slice(0,10);setPlayerStats(s)
 }
 const PREFS_KEY='spider-solitaire-preferences';
-const tableThemes={classic:{name:'Classic Green',felt1:'#075534',felt2:'#06462e',felt3:'#043723',shell:'#0b2018'},blue:{name:'Midnight Blue',felt1:'#164f73',felt2:'#0d3d5d',felt3:'#082d46',shell:'#0a1c29'},burgundy:{name:'Burgundy',felt1:'#713343',felt2:'#592535',felt3:'#3d1724',shell:'#261016'},charcoal:{name:'Charcoal',felt1:'#41484b',felt2:'#30383b',felt3:'#22292b',shell:'#171b1d'}};
+const tableThemes={classic:{name:'Classic Green',felt1:'#075534',felt2:'#06462e',felt3:'#043723',shell:'#0b2018'},blue:{name:'Midnight Blue',felt1:'#164f73',felt2:'#0d3d5d',felt3:'#082d46',shell:'#0a1c29'},burgundy:{name:'Casino Red',felt1:'#8a2636',felt2:'#6b1928',felt3:'#45101b',shell:'#260a10'},charcoal:{name:'Casino Black',felt1:'#34383a',felt2:'#24282a',felt3:'#151819',shell:'#0c0e0f'}};
 const cardBacks={blue:'Classic Blue',red:'Royal Red',black:'Midnight Black',green:'Emerald'};
 function defaultPrefs(){return {theme:'classic',cardBack:'blue',smartTap:true}}
 function getPrefs(){try{return Object.assign(defaultPrefs(),JSON.parse(localStorage.getItem(PREFS_KEY)||'{}'))}catch(e){return defaultPrefs()}}
@@ -149,7 +149,7 @@ function showSettings(){
   <button class="settings-row" disabled><span><b>Number of Suits</b><br><span>1 Suit · More difficulties coming soon</span></span><span>Coming Soon</span></button>
   <button class="settings-row" data-toggle="smart"><span><b>Smart Tap</b><br><span>Tap a movable card to choose its best destination</span></span><span class="toggle ${prefs.smartTap?'on':''}"></span></button>
  </div>
- <div class="settings-section"><h3>Appearance</h3>
+ <div class="settings-section"><h3>Appearance</h3><div class="settings-note">Mix tableau and card-back colors however you like. Try Casino Red with Midnight Black, or Casino Black with Royal Red.</div>
   <button class="settings-row" data-open="tableau"><span><b>Tableau Color</b><br><span>${(tableThemes[prefs.theme]||tableThemes.classic).name}</span></span><span class="chev">›</span></button>
   <button class="settings-row" disabled><span><b>Card Design</b><br><span>Card faces and styles</span></span><span>Coming Soon</span></button>
   <button class="settings-row" data-open="cardback"><span><b>Card Back</b><br><span>${cardBacks[prefs.cardBack]||cardBacks.blue}</span></span><span class="chev">›</span></button>
@@ -501,6 +501,15 @@ await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy
 await commit();render();h.remove();animating=false
 }
 async function perform(f,i,t,msg='Moved.'){if(animating||!legal(f,i,t))return false;cancelHint();let m={from:f,index:i,to:t};remember();startClock();await animateReal(m,async()=>{state.cols[t].push(...state.cols[f].splice(i));flip(f);state.moves++;selected=null;status.textContent=msg;await post()});return true}
+function manualTap(c,i){
+ if(hintRun)cancelHint();if(animating)return;
+ if(selected){
+   if(selected.col===c&&selected.index===i){selected=null;status.textContent='Selection cleared.';render();return}
+   if(legal(selected.col,selected.index,c)){perform(selected.col,selected.index,c,'Move completed.');return}
+ }
+ if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';return}
+ selected={col:c,index:i};status.textContent='Stack selected. Tap a destination or drag.';render()
+}
 function smart(c,i){if(hintRun)cancelHint();if(animating)return;if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';return}if(!prefs.smartTap){selected={col:c,index:i};status.textContent='Stack selected. Tap a destination or drag.';render();return}let m=best(c,i);if(m)perform(c,i,m.to,'Smart move completed.');else{selected={col:c,index:i};status.textContent='No automatic move found. Tap a destination or drag.';render()}}
 function tapDest(c){if(selected)perform(selected.col,selected.index,c,'Manual move completed.')}
 async function deal(){
@@ -525,7 +534,7 @@ await post();render();animating=false
 function render(){columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');if(!card.faceUp)e.style.background=cardBackStyle(prefs.cardBack);e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.innerHTML=faceHTML(card);e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>pointerUp(ev,ci,i))}col.appendChild(e)});col.addEventListener('pointerup',e=>{if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});let deals=Math.floor(state.stock.length/10);stockEl.innerHTML='';for(let i=0;i<deals;i++){let s=document.createElement('div');s.className='stock-card';s.style.background=cardBackStyle(prefs.cardBack);s.style.left=(i*10)+'px';s.style.top='2px';s.style.zIndex=i+1;stockEl.appendChild(s)}stockControl.disabled=!deals;stockControl.setAttribute('aria-label',deals?`Deal next row. ${deals} deals remaining`:'No deals remaining');completedEl.innerHTML='';for(let i=0;i<8;i++){let c=document.createElement('div');c.className=i<state.completed?'complete-card':'complete-slot';c.textContent=i<state.completed?'K♠':'♠';completedEl.appendChild(c)}undoBtn.disabled=!history.length;stats();saveGame();setTimeout(()=>state.cols.forEach(col=>col.forEach(card=>delete card._justFlipped)),100)}
 function pointerDown(e,c,i,el){if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;if(!movable(c,i))return;pointer={id:e.pointerId,c,i,x:e.clientX,y:e.clientY,drag:false,el,h:null,dx:0,dy:0};el.setPointerCapture?.(e.pointerId);document.addEventListener('pointermove',pointerMove,{passive:false})}
 function pointerMove(e){if(!pointer||e.pointerId!==pointer.id)return;let dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.drag&&Math.hypot(dx,dy)<12)return;if(!pointer.drag){pointer.drag=true;pointer.h=motionStack(pointer.c,pointer.i);let r=pointer.el.getBoundingClientRect();pointer.dx=e.clientX-r.left;pointer.dy=e.clientY-r.top}e.preventDefault();let br=board.getBoundingClientRect();pointer.h.style.left=(e.clientX-br.left-pointer.dx)+'px';pointer.h.style.top=(e.clientY-br.top-pointer.dy)+'px';document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column');if(t&&legal(pointer.c,pointer.i,+t.dataset.col))t.classList.add('drop-target')}
-function pointerUp(e,c,i){document.removeEventListener('pointermove',pointerMove);if(!pointer)return;document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let p=pointer;pointer=null;if(p.drag){let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column'),to=t?+t.dataset.col:null;p.h?.remove();if(to!==null&&legal(p.c,p.i,to)){perform(p.c,p.i,to,'Dragged move completed.');return}render();return}smart(c,i)}
+function pointerUp(e,c,i){document.removeEventListener('pointermove',pointerMove);if(!pointer)return;document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let p=pointer;pointer=null;if(p.drag){let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column'),to=t?+t.dataset.col:null;p.h?.remove();if(to!==null&&legal(p.c,p.i,to)){perform(p.c,p.i,to,'Dragged move completed.');return}render();return}prefs.smartTap?smart(c,i):manualTap(c,i)}
 async function undo(){
 if(hintRun)cancelHint('Hint tour stopped.');if(animating||!history.length)return;
 const previous=history[history.length-1],current=copy();animating=true;selected=null;let found=null;
@@ -542,7 +551,7 @@ newBtn.onclick=askNew;newBottom.onclick=askNew;
 $('settings').onclick=()=>{cancelHint();showSettings()};
 
 let devPressTimer=null;
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.7');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.7.1');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
