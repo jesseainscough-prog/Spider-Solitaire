@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.6</title>
+<title>Spider Solitaire 1.0J.6.1</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
@@ -28,7 +28,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .stock-wrap{position:absolute;right:10px;top:10px;z-index:3;text-align:center;font-size:11px}.stock-control{width:88px;height:64px;padding:0;background:transparent;border:0;cursor:pointer;touch-action:manipulation}.stock-control:disabled{opacity:.45}.stock{width:88px;height:59px;position:relative;margin:0 auto}
 .stock-card{position:absolute;width:39px;height:55px;border-radius:4px;background:repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px);border:1px solid #e3edf7}
 .completed{position:absolute;left:10px;top:13px;display:flex;gap:3px;z-index:3}.complete-card,.complete-slot{width:24px;height:34px;border-radius:3px;text-align:center;font:700 12px/32px Georgia,serif}.complete-card{background:var(--cream);color:#111;border:1px solid #ddd}.complete-slot{border:1px solid #ffffff38;color:#ffffff2b;background:#ffffff08}
-.toolbar{position:absolute;left:0;right:0;bottom:0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:7px 10px;background:#002619ee;border-top:1px solid #e8c87966;z-index:5}
+.toolbar{position:absolute;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:7px 10px;background:#002619ee;border-top:1px solid #e8c87966;z-index:5}
 .toolbar-btn{min-height:40px;border-radius:12px;font-weight:700;color:#fff;background:#ffffff14;border:1px solid #ffffff24}.toolbar-btn:disabled{color:#ffffff59}.deal-btn{background:linear-gradient(#efd58e,#d4ac58);color:#17241d;border-color:#efd58e}.deal-btn:disabled{opacity:.5}
 .status{max-width:820px;margin:7px auto 0;font-size:13px;color:#bfc8c3;min-height:20px}
 .hint-counter{position:absolute;left:50%;bottom:110px;transform:translateX(-50%);z-index:1200;background:#001f16e8;border:1px solid var(--gold);color:var(--gold);border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700}
@@ -56,6 +56,13 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .dev-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.dev-grid button,.dev-close{border:1px solid #ffffff33;background:#ffffff10;color:#fff;border-radius:11px;padding:12px 8px;font-weight:800}
 .dev-grid button:active,.dev-close:active{transform:scale(.97)}.dev-close{width:100%;margin-top:12px;color:#efd58e}
 .collection-tile{min-height:118px;border:1px solid #ffffff25;border-radius:12px;background:#ffffff0c;padding:8px;text-align:center;color:#fff}.collection-tile.locked{opacity:.38;filter:grayscale(1)}.collection-icon{height:70px;display:flex;align-items:center;justify-content:center;font-size:36px}.collection-name{font-weight:800;font-size:12px;color:#efd58e}.collection-state{font-size:10px;opacity:.7;margin-top:3px}.stats-overlay{position:absolute;inset:0;z-index:3450;background:#001d14f5;padding:18px 14px;overflow:auto}.stats-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.stats-head h2{margin:0;color:#efd58e;font:700 25px Georgia,serif}.stats-close{border:1px solid #ffffff44;background:#ffffff12;color:#fff;border-radius:10px;padding:8px 12px}.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}.stats-tile{border:1px solid #ffffff22;background:#ffffff0b;border-radius:12px;padding:10px 6px;text-align:center}.stats-tile span{display:block;font-size:10px;opacity:.65}.stats-tile b{display:block;color:#efd58e;font-size:18px;margin-top:3px}.history-title{color:#efd58e;font:700 17px Georgia,serif;margin:8px 0}.history-row{display:grid;grid-template-columns:52px 1fr 1fr 1fr;gap:6px;padding:9px 7px;border-top:1px solid #ffffff18;font-size:11px}.history-row.win .result{color:#efd58e}.result{font-weight:800}.history-empty{text-align:center;opacity:.6;padding:24px 0}.stats-link{text-decoration:underline;text-underline-offset:2px}
+.settings-overlay{position:absolute;inset:0;z-index:3500;background:#001d14f7;padding:18px 14px;overflow:auto}
+.settings-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}.settings-head h2{margin:0;color:#efd58e;font:700 26px Georgia,serif}.settings-close{border:1px solid #ffffff44;background:#ffffff12;color:#fff;border-radius:10px;padding:8px 12px}
+.settings-section{margin:15px 0}.settings-section h3{margin:0 0 7px;color:#efd58e;font:700 15px Georgia,serif;letter-spacing:.04em}
+.settings-row{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;padding:12px 11px;margin:6px 0;border:1px solid #ffffff22;border-radius:12px;background:#ffffff0b;color:#fff;font:inherit}
+.settings-row b{font-size:13px}.settings-row span{font-size:11px;opacity:.62}.settings-row .chev{font-size:18px;color:#efd58e;opacity:1}.settings-row:disabled{opacity:.42}
+.settings-note{font-size:11px;opacity:.55;line-height:1.4;margin:8px 2px}
+
 
 </style>
 </head>
@@ -70,7 +77,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="statsLink" class="stats-link">1 Suit • Smart Tap • Stats</span><span>v1.0J.6</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.6.1</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -79,8 +86,9 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   <div id="hintCounter" class="hint-counter" hidden>Hint 1 of 5</div>
 </section>
 <footer class="toolbar">
+  <button id="settings" class="toolbar-btn">⚙ Settings</button>
+  <button id="newBottom" class="toolbar-btn">↻ New Deal</button>
   <button id="hint" class="toolbar-btn">💡 Hint</button>
-  <button id="newBottom" class="toolbar-btn">↻ New Game</button>
   <button id="undo" class="toolbar-btn" disabled>↶ Undo</button>
 </footer>
 </main>
@@ -118,6 +126,32 @@ function recordFinishedGame(won){
  if(developerGame)return;let s=getPlayerStats(),score=gameScore();s.gamesPlayed++;
  if(won){s.wins++;s.currentStreak++;s.bestStreak=Math.max(s.bestStreak,s.currentStreak);s.bestTime=s.bestTime==null?state.elapsed:Math.min(s.bestTime,state.elapsed);s.fewestMoves=s.fewestMoves==null?state.moves:Math.min(s.fewestMoves,state.moves);s.bestScore=s.bestScore==null?score:Math.max(s.bestScore,score)}else s.currentStreak=0;
  s.history.unshift({won,score,moves:state.moves,time:state.elapsed,at:Date.now()});s.history=s.history.slice(0,10);setPlayerStats(s)
+}
+function showSettings(){
+ document.querySelector('.settings-overlay')?.remove();let o=document.createElement('div');o.className='settings-overlay';
+ o.innerHTML=`<div class="settings-head"><h2>Settings</h2><button class="settings-close">Close</button></div>
+ <div class="settings-section"><h3>Player</h3>
+  <button class="settings-row" data-open="stats"><span><b>Stats & History</b><br><span>Records, streaks and recent games</span></span><span class="chev">›</span></button>
+  <button class="settings-row" data-open="collection"><span><b>Celebration Collection</b><br><span>View your collected win animations</span></span><span class="chev">›</span></button>
+ </div>
+ <div class="settings-section"><h3>Game</h3>
+  <button class="settings-row" disabled><span><b>Number of Suits</b><br><span>1 Suit · More difficulties coming soon</span></span><span>Coming Soon</span></button>
+  <button class="settings-row" disabled><span><b>Smart Tap</b><br><span>Gameplay preference controls coming soon</span></span><span>On</span></button>
+ </div>
+ <div class="settings-section"><h3>Appearance</h3>
+  <button class="settings-row" disabled><span><b>Tableau Color</b><br><span>Choose your table theme</span></span><span>Coming Soon</span></button>
+  <button class="settings-row" disabled><span><b>Card Design</b><br><span>Card faces and styles</span></span><span>Coming Soon</span></button>
+  <button class="settings-row" disabled><span><b>Card Back</b><br><span>Choose a card-back design</span></span><span>Coming Soon</span></button>
+ </div>
+ <div class="settings-section"><h3>Sound & Haptics</h3>
+  <button class="settings-row" disabled><span><b>Sound</b><br><span>Game sound controls</span></span><span>Coming Soon</span></button>
+  <button class="settings-row" disabled><span><b>Haptics</b><br><span>Touch feedback controls</span></span><span>Coming Soon</span></button>
+ </div>
+ <div class="settings-note">More customization will be added here as Spider Solitaire grows.</div>`;
+ board.appendChild(o);
+ o.querySelector('.settings-close').onclick=()=>o.remove();
+ o.querySelector('[data-open="stats"]').onclick=()=>{o.remove();showStats()};
+ o.querySelector('[data-open="collection"]').onclick=()=>{o.remove();showCollection()}
 }
 function showStats(){
  document.querySelector('.stats-overlay')?.remove();let s=getPlayerStats(),pct=s.gamesPlayed?Math.round(s.wins/s.gamesPlayed*100):0,owned=getCollection().length,o=document.createElement('div');o.className='stats-overlay';
@@ -488,12 +522,13 @@ history.pop();state=previous;animating=false;status.textContent='Last action und
 undoBtn.onclick=undo;hintBtn.onclick=runHints;stockControl.onclick=deal;
 const askNew=()=>{
  cancelHint();if(!hasProgress()){newGame();return}
- if(confirm('Start a new game? Your current game will be replaced.')){if(!developerGame)recordFinishedGame(false);newGame()}
+ if(confirm('Start a new deal? Your current game will be replaced.')){if(!developerGame)recordFinishedGame(false);newGame()}
 };
 newBtn.onclick=askNew;newBottom.onclick=askNew;
+$('settings').onclick=()=>{cancelHint();showSettings()};
 
 let devPressTimer=null;
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.6');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.6.1');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
@@ -502,7 +537,6 @@ if(versionEl){
  versionEl.addEventListener('pointercancel',cancelDev);
  versionEl.addEventListener('pointerleave',cancelDev);
 }
-$('statsLink').onclick=showStats;
 window.addEventListener('pagehide',saveGame);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveGame()});
 try{
