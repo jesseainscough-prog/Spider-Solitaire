@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.12.6</title>
+<title>Spider Solitaire 1.0J.13.0</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -57,6 +57,15 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .dev-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.dev-grid button,.dev-close{border:1px solid #ffffff33;background:#ffffff10;color:#fff;border-radius:11px;padding:12px 8px;font-weight:800}
 .dev-grid button:active,.dev-close:active{transform:scale(.97)}.dev-close{width:100%;margin-top:12px;color:#efd58e}
 .collection-tile{min-height:118px;border:1px solid #ffffff25;border-radius:12px;background:#ffffff0c;padding:8px;text-align:center;color:#fff}.collection-tile.locked{opacity:.38;filter:grayscale(1)}.collection-icon{height:70px;display:flex;align-items:center;justify-content:center;font-size:36px}.collection-name{font-weight:800;font-size:12px;color:#efd58e}.collection-state{font-size:10px;opacity:.7;margin-top:3px}.stats-overlay{position:absolute;inset:0;z-index:3450;background:#00291d;padding:18px 14px;overflow:auto}.stats-head{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;margin-bottom:14px}.stats-head h2{margin:0;color:#efd58e;font:700 25px Georgia,serif}.stats-close{border:1px solid #ffffff44;background:#ffffff12;color:#fff;border-radius:10px;padding:8px 12px}.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}.stats-tile{border:1px solid #ffffff38;background:#ffffff12;border-radius:12px;padding:10px 6px;text-align:center}.stats-tile span{display:block;font-size:10px;opacity:.65}.stats-tile b{display:block;color:#efd58e;font-size:18px;margin-top:3px}.history-title{color:#efd58e;font:700 17px Georgia,serif;margin:8px 0}.history-row{display:grid;grid-template-columns:52px 1fr 1fr 1fr;gap:6px;padding:9px 7px;border-top:1px solid #ffffff18;font-size:11px}.history-row.win .result{color:#efd58e}.result{font-weight:800}.history-empty{text-align:center;opacity:.6;padding:24px 0}.stats-link{text-decoration:underline;text-underline-offset:2px}
+
+.progress-card{margin:10px 0 14px;padding:13px;border:1px solid #e8c87966;border-radius:13px;background:#ffffff0c}
+.progress-top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}.progress-top b{color:#efd58e;font:700 18px Georgia,serif}.progress-top span{font-size:12px;font-weight:800;color:#efd58e}
+.web-bar{height:12px;margin-top:9px;border-radius:999px;background:#001b13;border:1px solid #ffffff26;overflow:hidden}.web-fill{height:100%;width:0;background:linear-gradient(90deg,#b98d35,#efd58e);border-radius:999px;transition:width .9s cubic-bezier(.2,.8,.25,1)}
+.progress-sub{display:flex;justify-content:space-between;margin-top:6px;font-size:10px;opacity:.68}.web-total{font-weight:900;color:#efd58e}
+.achievement-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;padding-bottom:18px}.achievement-card{min-height:112px;padding:12px;border:1px solid #ffffff28;border-radius:13px;background:#ffffff0b}.achievement-card.unlocked{border-color:#e8c87988;background:#e8c87910}.achievement-icon{font-size:25px}.achievement-card h3{margin:5px 0 3px;color:#efd58e;font:700 15px Georgia,serif}.achievement-card p{margin:0;font-size:10px;line-height:1.35;opacity:.72}.achievement-reward{margin-top:7px;font-size:11px;font-weight:900;color:#efd58e}.achievement-state{font-size:9px;opacity:.55;margin-top:3px}
+.reward-box{margin:12px 0;padding:11px;border:1px solid #e8c87955;border-radius:13px;background:#001f16}.reward-line{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:12px}.reward-line b{color:#efd58e}.reward-total{border-top:1px solid #ffffff22;margin-top:5px;padding-top:8px;font-weight:900}
+.level-up{margin:10px 0;padding:8px;border-radius:999px;background:#e8c87922;border:1px solid #e8c879;color:#efd58e;font-weight:900}
+.new-achievements{margin:10px 0;font-size:11px;color:#efd58e;font-weight:800;line-height:1.5}
 .settings-overlay{position:absolute;inset:0;z-index:3500;background:#00291d;padding:18px 14px;overflow:auto}
 .settings-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}.settings-head h2{margin:0;color:#efd58e;font:700 26px Georgia,serif}.settings-close{border:1px solid #ffffff44;background:#ffffff12;color:#fff;border-radius:10px;padding:8px 12px}.nav-back{border:1px solid #ffffff44;background:#ffffff12;color:#fff;border-radius:10px;padding:8px 12px;font-weight:700;white-space:nowrap}
 .settings-section{margin:15px 0}.settings-section h3{margin:0 0 7px;color:#efd58e;font:700 15px Georgia,serif;letter-spacing:.04em}
@@ -78,7 +87,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.12.6</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.13.0</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -141,15 +150,72 @@ function winDayStreak(){
 const SAVE_KEY='spider-solitaire-j4-save';
 const COLLECTION_KEY='spider-solitaire-celebrations';
 const PLAYER_STATS_KEY='spider-solitaire-player-stats';
+const PROGRESS_KEY='spider-solitaire-progression';
+const ACHIEVEMENTS=[
+ {id:'first-win',icon:'🕸️',name:'First Web',desc:'Win your first game.',reward:5},
+ {id:'five-wins',icon:'🏆',name:'Getting the Hang of It',desc:'Win 5 games.',reward:10},
+ {id:'twentyfive-wins',icon:'👑',name:'Spider Master',desc:'Win 25 games.',reward:25},
+ {id:'easy-win',icon:'♠️',name:'Easy Does It',desc:'Win a 1-Suit game.',reward:5},
+ {id:'two-win',icon:'♥️',name:'Double Trouble',desc:'Win a 2-Suit game.',reward:10},
+ {id:'four-win',icon:'♦️',name:'Four-Suit Finisher',desc:'Win a 4-Suit game.',reward:20},
+ {id:'speed',icon:'⚡',name:'Speed Spider',desc:'Win a game in under 10 minutes.',reward:10},
+ {id:'efficient',icon:'🎯',name:'Web Efficiency',desc:'Beat a game’s move challenge.',reward:10},
+ {id:'streak3',icon:'🔥',name:'On a Roll',desc:'Win 3 games in a row.',reward:10},
+ {id:'days3',icon:'📅',name:'Dedicated',desc:'Win on 3 consecutive days.',reward:15},
+ {id:'daily',icon:'☀️',name:'Daily Debut',desc:'Complete a Daily Challenge.',reward:10},
+ {id:'suits25',icon:'🕷️',name:'Web Builder',desc:'Complete 25 full K→A suits.',reward:20}
+];
 function defaultPlayerStats(){return {gamesPlayed:0,wins:0,currentStreak:0,bestStreak:0,bestTime:null,fewestMoves:null,bestScore:null,history:[]}}
 function getPlayerStats(){try{return Object.assign(defaultPlayerStats(),JSON.parse(localStorage.getItem(PLAYER_STATS_KEY)||'{}'))}catch(e){return defaultPlayerStats()}}
 function setPlayerStats(s){try{localStorage.setItem(PLAYER_STATS_KEY,JSON.stringify(s))}catch(e){}}
-let developerGame=false;
+function defaultProgress(){return {webs:0,totalSuits:0,achievements:{}}}
+function getProgress(){try{let p=Object.assign(defaultProgress(),JSON.parse(localStorage.getItem(PROGRESS_KEY)||'{}'));p.achievements=p.achievements||{};return p}catch(e){return defaultProgress()}}
+function setProgress(p){try{localStorage.setItem(PROGRESS_KEY,JSON.stringify(p))}catch(e){}}
+function websNeeded(level){return 15+(level-1)*5}
+function levelInfo(total){
+ let level=1,into=Math.max(0,total||0),need=websNeeded(level);
+ while(into>=need){into-=need;level++;need=websNeeded(level)}
+ return {level,into,need,pct:Math.min(100,Math.round(into/need*100))}
+}
+function challengeTargets(suits){return suits===4?{moves:180,time:1200}:suits===2?{moves:150,time:900}:{moves:120,time:600}}
+function achievementMet(a,s,p,won){
+ let targets=challengeTargets(prefs.suits);
+ if(a.id==='first-win')return s.wins>=1;
+ if(a.id==='five-wins')return s.wins>=5;
+ if(a.id==='twentyfive-wins')return s.wins>=25;
+ if(a.id==='easy-win')return won&&prefs.suits===1;
+ if(a.id==='two-win')return won&&prefs.suits===2;
+ if(a.id==='four-win')return won&&prefs.suits===4;
+ if(a.id==='speed')return won&&state.elapsed<600;
+ if(a.id==='efficient')return won&&state.moves<=targets.moves;
+ if(a.id==='streak3')return s.currentStreak>=3;
+ if(a.id==='days3')return winDayStreak()>=3;
+ if(a.id==='daily')return won&&dailyMode;
+ if(a.id==='suits25')return p.totalSuits>=25;
+ return false
+}
+function awardProgress(won,s){
+ let p=getProgress(),before=p.webs,lines=[],base=0,targets=challengeTargets(prefs.suits);
+ if(state.completed>0){base+=state.completed;lines.push([`${state.completed} completed suit${state.completed===1?'':'s'}`,state.completed])}
+ if(won){base+=3;lines.push(['Game won',3]);
+  let diff=prefs.suits===4?4:prefs.suits===2?2:0;if(diff){base+=diff;lines.push([`${prefs.suits}-Suit difficulty bonus`,diff])}
+  if(state.moves<=targets.moves){base+=2;lines.push([`Move challenge · ${targets.moves} or fewer`,2])}
+  if(state.elapsed<=targets.time){base+=2;lines.push([`Time challenge · ${fmt(targets.time)} or faster`,2])}
+  if(dailyMode){base+=3;lines.push(['Daily Challenge',3])}
+ }
+ p.totalSuits=(p.totalSuits||0)+state.completed;p.webs+=base;
+ let unlocked=[];
+ ACHIEVEMENTS.forEach(a=>{if(!p.achievements[a.id]&&achievementMet(a,s,p,won)){p.achievements[a.id]=Date.now();p.webs+=a.reward;unlocked.push(a);lines.push([`Achievement · ${a.name}`,a.reward])}});
+ setProgress(p);
+ return {before,after:p.webs,earned:p.webs-before,lines,unlocked,beforeLevel:levelInfo(before),afterLevel:levelInfo(p.webs)}
+}
+let developerGame=false,pendingProgressSummary=null;
 function gameScore(){return Math.max(0,500-state.moves+state.completed*100)}
 function recordFinishedGame(won){
- if(developerGame)return;let s=getPlayerStats(),score=gameScore();s.gamesPlayed++;
+ if(developerGame)return null;let s=getPlayerStats(),score=gameScore();s.gamesPlayed++;
  if(won){recordWinDay();s.wins++;s.currentStreak++;s.bestStreak=Math.max(s.bestStreak,s.currentStreak);s.bestTime=s.bestTime==null?state.elapsed:Math.min(s.bestTime,state.elapsed);s.fewestMoves=s.fewestMoves==null?state.moves:Math.min(s.fewestMoves,state.moves);s.bestScore=s.bestScore==null?score:Math.max(s.bestScore,score)}else s.currentStreak=0;
- s.history.unshift({won,score,moves:state.moves,time:state.elapsed,at:Date.now()});s.history=s.history.slice(0,10);setPlayerStats(s)
+ s.history.unshift({won,score,moves:state.moves,time:state.elapsed,suits:prefs.suits,daily:!!dailyMode,completed:state.completed,at:Date.now()});s.history=s.history.slice(0,10);setPlayerStats(s);
+ pendingProgressSummary=awardProgress(won,s);return pendingProgressSummary
 }
 const PREFS_KEY='spider-solitaire-preferences';
 const tableThemes={classic:{name:'Classic Green',felt1:'#075534',felt2:'#06462e',felt3:'#043723',shell:'#0b2018'},blue:{name:'Midnight Blue',felt1:'#164f73',felt2:'#0d3d5d',felt3:'#082d46',shell:'#0a1c29'},burgundy:{name:'Casino Red',felt1:'#8a2636',felt2:'#6b1928',felt3:'#45101b',shell:'#260a10'},charcoal:{name:'Casino Black',felt1:'#34383a',felt2:'#24282a',felt3:'#151819',shell:'#0c0e0f'}};
@@ -178,13 +244,29 @@ function showSuitChooser(){
    dailyMode=false;dailyDate=null;prefs.suits=n;setPrefs(prefs);o.remove();newGame();showSettings();
  })
 }
+
+function progressCardHTML(){
+ let p=getProgress(),li=levelInfo(p.webs);
+ return `<div class="progress-card"><div class="progress-top"><b>Level ${li.level}</b><span>🕸️ ${p.webs} Webs</span></div><div class="web-bar"><div class="web-fill" style="width:${li.pct}%"></div></div><div class="progress-sub"><span>${li.into} / ${li.need} to next level</span><span>${Object.keys(p.achievements).length}/${ACHIEVEMENTS.length} achievements</span></div></div>`
+}
+function showAchievements(){
+ document.querySelector('.settings-overlay')?.remove();let p=getProgress(),li=levelInfo(p.webs),o=document.createElement('div');o.className='settings-overlay';
+ o.innerHTML=`<div class="settings-head"><button class="nav-back">← Back</button><h2>Achievements</h2><button class="settings-close">×</button></div>${progressCardHTML()}<div class="settings-note">Achievements award bonus Webs. Webs fill your level bar and carry forward permanently.</div><div class="achievement-grid">${ACHIEVEMENTS.map(a=>{let on=!!p.achievements[a.id];return `<div class="achievement-card ${on?'unlocked':''}"><div class="achievement-icon">${on?a.icon:'🔒'}</div><h3>${a.name}</h3><p>${a.desc}</p><div class="achievement-reward">+${a.reward} 🕸️</div><div class="achievement-state">${on?'Unlocked':'Locked'}</div></div>`}).join('')}</div>`;
+ board.appendChild(o);o.querySelector('.settings-close').onclick=()=>o.remove();o.querySelector('.nav-back').onclick=()=>{o.remove();showSettings()}
+}
+function rewardSummaryHTML(summary){
+ if(!summary)return '';let b=summary.beforeLevel,a=summary.afterLevel;
+ return `<div class="reward-box">${summary.lines.length?summary.lines.map(x=>`<div class="reward-line"><span>${x[0]}</span><b>+${x[1]} 🕸️</b></div>`).join(''):`<div class="reward-line"><span>No Webs earned this game</span><b>0 🕸️</b></div>`}<div class="reward-line reward-total"><span>Total earned</span><b>+${summary.earned} 🕸️</b></div></div><div class="progress-card"><div class="progress-top"><b>Level ${a.level}</b><span>🕸️ ${summary.after} Webs</span></div><div class="web-bar"><div class="web-fill reward-progress" data-pct="${a.pct}" style="width:${b.level===a.level?b.pct:0}%"></div></div><div class="progress-sub"><span>${a.into} / ${a.need} to next level</span><span>Next Level ${a.level+1}</span></div></div>${a.level>b.level?`<div class="level-up">LEVEL UP! · Level ${a.level}</div>`:''}${summary.unlocked.length?`<div class="new-achievements">🏆 Achievement Unlocked: ${summary.unlocked.map(x=>x.name).join(' · ')}</div>`:''}`
+}
 function showSettings(){
  document.querySelector('.settings-overlay')?.remove();let o=document.createElement('div');o.className='settings-overlay';
  o.innerHTML=`<div class="settings-head"><h2>Settings</h2><button class="settings-close">×</button></div>
  <div class="daily-card"><h3>Daily Challenge <span class="daily-badge">${dailyChallengeInfo().completed?'Completed Today':'New Today'}</span></h3><div class="daily-meta">${dateKey()} · ${difficultyName(prefs.suits)}</div><button class="daily-btn" id="startDaily">${dailyChallengeInfo().completed?'Play Today Again':'Play Today’s Challenge'}</button></div>
  <div class="settings-section"><h3>Player</h3>
+  ${progressCardHTML()}
   <div class="settings-row" style="cursor:default"><span><b>🔥 Win Streak</b><br><span>Consecutive days with at least one win</span></span><span style="font-weight:900;color:#efd58e;font-size:18px">${winDayStreak()} day${winDayStreak()===1?'':'s'}</span></div>
   <button class="settings-row" data-open="stats"><span><b>Stats & History</b><br><span>Records, streaks and recent games</span></span><span class="chev">›</span></button>
+  <button class="settings-row" data-open="achievements"><span><b>Achievements</b><br><span>${Object.keys(getProgress().achievements).length}/${ACHIEVEMENTS.length} unlocked · Earn bonus Webs</span></span><span class="chev">›</span></button>
   <button class="settings-row" data-open="collection"><span><b>Celebration Collection</b><br><span>View your collected win animations</span></span><span class="chev">›</span></button>
  </div>
  <div class="settings-section"><h3>Game</h3>
@@ -211,6 +293,7 @@ function showSettings(){
   status.textContent=`Daily Challenge ${dailyDate} · ${difficultyName(prefs.suits)}`;
  };
  o.querySelector('[data-open="stats"]').onclick=()=>{o.remove();showStats()};
+ o.querySelector('[data-open="achievements"]').onclick=()=>{o.remove();showAchievements()};
  o.querySelector('[data-open="collection"]').onclick=()=>{o.remove();showCollection()};
  o.querySelector('[data-open="suits"]').onclick=()=>{o.remove();showSuitChooser()};
  o.querySelector('[data-open="tableau"]').onclick=()=>{o.remove();showTableauChooser()};
@@ -325,6 +408,13 @@ function devNoMovesTest(withStock){
  status.textContent=withStock?'Developer: no tableau moves; stock deal is available. Test Hint or wait 10 seconds.':'Developer: no legal moves and stock is empty. Test Hint or wait 10 seconds.';
  render();startClock();saveGame();resetInactivity()
 }
+
+function devProgressTest(){
+ developerGame=true;developerStuckTest=false;cancelHint();clearTimeout(inactivityTimer);
+ let p=getProgress(),before=p.webs,b=levelInfo(before),after=before+14,a=levelInfo(after);
+ let summary={before,after,earned:14,beforeLevel:b,afterLevel:a,lines:[['Game won',3],['8 completed suits',8],['Move challenge',2],['Time challenge',1]],unlocked:[{name:'First Web'}]};
+ let o=document.createElement('div');o.className='win-overlay';o.innerHTML=`<div class="win-panel"><h2>Progress Preview</h2>${rewardSummaryHTML(summary)}<p>This preview does not change your saved Webs or achievements.</p><button id="closeProgress">Close</button><button id="openAchievements" class="collection-btn">Achievements</button></div>`;board.appendChild(o);requestAnimationFrame(()=>requestAnimationFrame(()=>{let f=o.querySelector('.reward-progress');if(f)f.style.width=(+f.dataset.pct||0)+'%'}));o.querySelector('#closeProgress').onclick=()=>{o.remove();resetInactivity()};o.querySelector('#openAchievements').onclick=()=>{o.remove();showAchievements()}
+}
 function showDeveloper(){
  document.querySelector('.dev-overlay')?.remove();
  let o=document.createElement('div');o.className='dev-overlay';
@@ -332,7 +422,7 @@ function showDeveloper(){
  <div class="dev-grid">
  <button data-dev="near">Near Win</button><button data-dev="win">Instant Win</button>
  <button data-dev="complete">Test Completed Suit</button><button data-dev="stuck-stock">No Moves · Stock Available</button>
- <button data-dev="stuck-empty">No Moves · Stock Empty</button><button data-dev="collection">Open Collection</button><button data-dev="stats">Open Stats</button>
+ <button data-dev="stuck-empty">No Moves · Stock Empty</button><button data-dev="progress">Test Progress Reward</button><button data-dev="achievements">Open Achievements</button><button data-dev="collection">Open Collection</button><button data-dev="stats">Open Stats</button>
  <button data-preview="spider">Test Spider Shuffle</button><button data-preview="wave">Test Royal Wave</button>
  <button data-preview="tower">Test Card Tower</button><button data-dev="reset">Reset Celebrations</button>
  <button data-dev="unlock">Unlock All</button>
@@ -344,6 +434,8 @@ function showDeveloper(){
  o.querySelector('[data-dev="complete"]').onclick=()=>{o.remove();devCompletionTest()};
  o.querySelector('[data-dev="stuck-stock"]').onclick=()=>{o.remove();devNoMovesTest(true)};
  o.querySelector('[data-dev="stuck-empty"]').onclick=()=>{o.remove();devNoMovesTest(false)};
+ o.querySelector('[data-dev="progress"]').onclick=()=>{o.remove();devProgressTest()};
+ o.querySelector('[data-dev="achievements"]').onclick=()=>{o.remove();showAchievements()};
  o.querySelector('[data-dev="collection"]').onclick=()=>{o.remove();showCollection()};
  o.querySelector('[data-dev="stats"]').onclick=()=>{o.remove();showStats()};
  o.querySelectorAll('[data-preview]').forEach(b=>b.onclick=()=>devPreviewCelebration(b.dataset.preview));
@@ -355,7 +447,7 @@ function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60)
 function startClock(){if(started)return;started=true;startAt=Date.now()-state.elapsed*1000;timerId=setInterval(()=>{state.elapsed=Math.floor((Date.now()-startAt)/1000);stats();saveGame()},1000)}
 function stopClock(){clearInterval(timerId);timerId=null} function stats(){movesEl.textContent=state.moves;scoreEl.textContent=Math.max(0,500-state.moves+state.completed*100);timerEl.textContent=fmt(state.elapsed)}
 function cancelHint(msg=''){if(!hintRun)return;hintRun.cancelled=true;hintRun=null;hintCounter.hidden=true;document.querySelectorAll('.motion-stack').forEach(x=>x.remove());animating=false;if(msg)status.textContent=msg}
-function newGame(){cancelHint();closeStuckPopup();lastStuckSignature='';developerStuckTest=false;stopClock();started=false;history=[];selected=null;developerGame=false;let d=deck(),rng=dailyMode?seededRandom(seedFromString(`spider-${dailyDate}-${prefs.suits}`)):Math.random;shuffle(d,rng);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,completedSuits:[],elapsed:0};status.textContent=`${prefs.suits===4?'4-Suit':prefs.suits===2?'2-Suit':'1-Suit'} game. Tap a movable card or stack.`;render();resetInactivity()}
+function newGame(){cancelHint();closeStuckPopup();pendingProgressSummary=null;lastStuckSignature='';developerStuckTest=false;stopClock();started=false;history=[];selected=null;developerGame=false;let d=deck(),rng=dailyMode?seededRandom(seedFromString(`spider-${dailyDate}-${prefs.suits}`)):Math.random;shuffle(d,rng);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,completedSuits:[],elapsed:0};status.textContent=`${prefs.suits===4?'4-Suit':prefs.suits===2?'2-Suit':'1-Suit'} game. Tap a movable card or stack.`;render();resetInactivity()}
 function movable(c,i){let a=state.cols[c];if(i<0||!a[i]?.faceUp)return false;for(let x=i;x<a.length-1;x++)if(!a[x+1].faceUp||val(a[x].rank)!==val(a[x+1].rank)+1||(prefs.suits>1&&(a[x].suit||'♠')!==(a[x+1].suit||'♠')))return false;return true}
 function legal(f,i,t){if(f===t||!movable(f,i))return false;let m=state.cols[f][i],d=state.cols[t];return !d.length||val(d[d.length-1].rank)===val(m.rank)+1}
 function flip(c){let a=state.cols[c];if(a.length&&!a[a.length-1].faceUp){a[a.length-1].faceUp=true;a[a.length-1]._justFlipped=true}}
@@ -384,7 +476,8 @@ function showCollection(){
 }
 async function celebrateWin(){
  stopClock();started=false;saveGame();let chosen=nextCelebration(),fresh=unlockCelebration(chosen.id);let stage=document.createElement('div');stage.className='celebration-stage';board.appendChild(stage);await playCelebration(stage,chosen.id);stage.remove();
- let o=document.createElement('div');o.className='win-overlay';o.innerHTML=`<div class="win-panel"><h2>You Won!</h2><p>Score <b>${Math.max(0,500-state.moves+state.completed*100)}</b> · Moves <b>${state.moves}</b> · Time <b>${fmt(state.elapsed)}</b></p>${fresh?`<div class="unlock-badge">★ New Celebration Unlocked</div>`:''}<p style="color:#efd58e;font-weight:800">${chosen.name}</p><button id="again">New Game</button><button id="collection" class="collection-btn">Collection</button></div>`;board.appendChild(o);o.querySelector('#again').onclick=()=>{o.remove();newGame()};o.querySelector('#collection').onclick=showCollection
+ let summary=pendingProgressSummary;pendingProgressSummary=null;
+ let o=document.createElement('div');o.className='win-overlay';o.innerHTML=`<div class="win-panel"><h2>You Won!</h2><p>Score <b>${Math.max(0,500-state.moves+state.completed*100)}</b> · Moves <b>${state.moves}</b> · Time <b>${fmt(state.elapsed)}</b></p>${fresh?`<div class="unlock-badge">★ New Celebration Unlocked</div>`:''}${rewardSummaryHTML(summary)}<p style="color:#efd58e;font-weight:800">${chosen.name}</p><button id="again">New Game</button><button id="achievements" class="collection-btn">Achievements</button></div>`;board.appendChild(o);requestAnimationFrame(()=>requestAnimationFrame(()=>{let f=o.querySelector('.reward-progress');if(f)f.style.width=(+f.dataset.pct||0)+'%'}));o.querySelector('#again').onclick=()=>{o.remove();newGame()};o.querySelector('#achievements').onclick=()=>{o.remove();showAchievements()}
 }
 
 async function animateCompletion(pc){
@@ -724,7 +817,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.12.6');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.13.0');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
