@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.2.1</title>
+<title>Spider Solitaire 1.0J.3</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
@@ -37,7 +37,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .motion-stack.hinting{filter:drop-shadow(0 0 7px rgba(232,200,121,.9))}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(15px);background:#000d;color:#fff;padding:9px 13px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.18s;z-index:5000}.toast.show{opacity:1;transform:translateX(-50%)}
 @media(max-width:430px){body{padding:0}.game-shell{border-radius:0;min-height:100dvh}.topbar{padding:9px 7px;gap:7px}.brand-main{font-size:17px}.stats{gap:7px}.stat{min-width:38px}.stat strong{font-size:15px}.icon-btn{width:36px;height:36px}.subbar{padding:5px 7px}.board{padding-left:2px;padding-right:2px}.columns{gap:2px}.column{height:440px}.card.face,.motion-card{padding:2px 1px}}
-.court-portrait{position:absolute;left:18%;top:8%;width:78%;height:88%;display:block;pointer-events:none}.complete-fly{position:absolute;z-index:1900;pointer-events:none;filter:drop-shadow(0 3px 4px #0008)}.complete-card{animation:completePop .24s ease-out}@keyframes completePop{0%{transform:scale(.55);opacity:.25}100%{transform:scale(1);opacity:1}}
+.court-card-art{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;display:block;pointer-events:none}.complete-fly{position:absolute;z-index:1900;pointer-events:none;filter:drop-shadow(0 3px 4px #0008)}.complete-card{animation:completePop .24s ease-out}@keyframes completePop{0%{transform:scale(.55);opacity:.25}100%{transform:scale(1);opacity:1}}
 .win-overlay{position:absolute;inset:0;z-index:3000;background:#001d14cc;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 .win-panel{width:min(82%,360px);padding:24px 18px;border:1px solid #e8c879;border-radius:18px;background:#063f2e;text-align:center;box-shadow:0 20px 50px #0008}
 .win-panel h2{margin:0 0 8px;color:#efd58e;font:700 30px Georgia,serif}.win-panel p{margin:7px 0;color:#fff}.win-panel button{margin-top:14px;padding:11px 24px;border-radius:12px;border:1px solid #efd58e;background:#e5bd65;color:#173326;font-weight:800}
@@ -55,7 +55,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.2.1</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.3</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -79,25 +79,14 @@ let state,history=[],selected=null,started=false,startAt=0,timerId=null,pointer=
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function toast(t){toastEl.textContent=t;toastEl.classList.add('show');clearTimeout(toastEl._t);toastEl._t=setTimeout(()=>toastEl.classList.remove('show'),1200)}
 
+const courtArt={
+ J:'https://raw.githubusercontent.com/AustinGabriel/The-Public-Domain-Deck-Public-Domain-and-CC0-Playing-Cards/main/svg%20cards/card%20fronts/spades/jack%20of%20spades.svg',
+ Q:'https://raw.githubusercontent.com/AustinGabriel/The-Public-Domain-Deck-Public-Domain-and-CC0-Playing-Cards/main/svg%20cards/card%20fronts/spades/queen%20of%20spades.svg',
+ K:'https://raw.githubusercontent.com/AustinGabriel/The-Public-Domain-Deck-Public-Domain-and-CC0-Playing-Cards/main/svg%20cards/card%20fronts/spades/king%20of%20spades.svg'
+};
 function faceHTML(card){
- if(!['J','Q','K'].includes(card.rank))return `<div class="rank">${card.rank}</div><div class="suit">♠</div>`;
- const cfg={
-  J:{c:'#315d9b',c2:'#b3262d',hat:'M12 18 L20 7 L28 18 L36 7 L44 18 L40 25 L16 25 Z'},
-  Q:{c:'#b3262d',c2:'#315d9b',hat:'M13 21 L16 8 L24 16 L30 6 L36 16 L43 8 L46 21 Z'},
-  K:{c:'#b3262d',c2:'#315d9b',hat:'M12 22 L14 7 L23 15 L30 5 L37 15 L46 7 L48 22 Z'}
- }[card.rank];
- return `<div class="rank">${card.rank}</div>
- <svg class="court-portrait" viewBox="0 0 60 86" aria-hidden="true">
-  <path d="${cfg.hat}" fill="#e1b642" stroke="#222" stroke-width="1.5"/>
-  <circle cx="30" cy="32" r="11" fill="#f0c69b" stroke="#222" stroke-width="1.4"/>
-  <path d="M21 29 Q30 24 39 29" fill="none" stroke="#6f3f24" stroke-width="2"/>
-  <circle cx="26" cy="32" r="1.2"/><circle cx="34" cy="32" r="1.2"/>
-  <path d="M26 38 Q30 41 34 38" fill="none" stroke="#8a3434" stroke-width="1.4"/>
-  <path d="M12 78 L18 47 Q30 40 42 47 L48 78 Z" fill="${cfg.c}" stroke="#222" stroke-width="1.5"/>
-  <path d="M18 48 L30 64 L42 48 L38 78 L22 78 Z" fill="${cfg.c2}" stroke="#e1b642" stroke-width="2"/>
-  <path d="M30 52 l4 6 -4 6 -4-6z" fill="#e1b642"/>
-  <text x="30" y="75" text-anchor="middle" font-size="15" font-family="Georgia,serif" fill="white">♠</text>
- </svg>`;
+ if(courtArt[card.rank])return `<img class="court-card-art" src="${courtArt[card.rank]}" alt="${card.rank} of spades" draggable="false">`;
+ return `<div class="rank">${card.rank}</div><div class="suit">♠</div>`;
 }
 function deck(){let d=[],id=0;for(let s=0;s<8;s++)for(const rank of ranks)d.push({id:id++,rank,faceUp:false});return d}
 function shuffle(a){for(let i=a.length-1;i;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
@@ -160,26 +149,46 @@ function breaksBuiltRun(f,i){
  if(i===1&&!s[0].faceUp)return false;
  return true;
 }
+function topRunLength(col){
+ let a=state.cols[col];
+ if(!a.length||!a[a.length-1].faceUp)return 0;
+ let n=1;
+ for(let x=a.length-1;x>0;x--){
+  if(!a[x-1].faceUp||val(a[x-1].rank)!==val(a[x].rank)+1)break;
+  n++;
+ }
+ return n;
+}
+function resultingRunLength(f,i,to){
+ let dest=state.cols[to], moving=state.cols[f].slice(i);
+ if(!dest.length)return moving.length;
+ return topRunLength(to)+moving.length;
+}
 function scoreMove(f,i,t){
  let s=state.cols[f],d=state.cols[t],moving=s.slice(i),n=moving.length,score=0;
  let exposesHidden=i>0&&!s[i-1].faceUp;
- let sourceRun=runLengthAt(f,i);
  let destTop=d[d.length-1];
- if(exposesHidden)score+=1400;                         // best strategic gain
- if(destTop)score+=260+n*28; else score+=(n===s.length?160:-260);
- if(destTop&&val(destTop.rank)===val(moving[0].rank)+1)score+=180;
- if(n>=8)score-=520; else if(n>=5)score-=220;          // don't tear apart strong runs casually
- if(i>0&&s[i-1].faceUp&&val(s[i-1].rank)===val(moving[0].rank)+1&&!exposesHidden)score-=650;
- if(d.length>=12-n){                                   // strong bonus for making K-A
-   let simulated=d.concat(moving);
-   if(simulated.length>=13){
-     let q=simulated.slice(-13),ok=q.every(x=>x.faceUp);
-     for(let x=0;ok&&x<12;x++)ok=val(q[x].rank)===val(q[x+1].rank)+1;
-     if(ok)score+=2200;
-   }
- }
- // discourage moves that merely relocate a run without improving structure
- if(!exposesHidden&&d.length&&sourceRun===n&&n>=3)score-=n*45;
+ let combined=resultingRunLength(f,i,t);
+
+ // Winning/completing a suit dominates every other choice.
+ if(moveCompletesSuit(f,i,t))score+=100000;
+
+ // Smart Tap should prefer the destination that creates the longest continuous run.
+ // Quadratic weighting makes K→2 decisively better than Q→2, etc.
+ score+=combined*combined*180;
+
+ // Extending an existing organized destination is better than using an empty column.
+ if(destTop)score+=900+topRunLength(t)*220;
+ else score-=500;
+
+ // Exposing a hidden card is strategically valuable.
+ if(exposesHidden)score+=5000;
+
+ // Preserve already-built source structure unless the move has a strong payoff.
+ if(breaksBuiltRun(f,i)&&!exposesHidden&&!moveCompletesSuit(f,i,t))score-=4500+n*180;
+
+ // Prefer consolidating more cards into one useful run.
+ score+=n*70;
  return score;
 }
 function legalMoves(){
