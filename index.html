@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.3.1</title>
+<title>Spider Solitaire 1.0J.3.2</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
@@ -55,7 +55,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.3.1</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.3.2</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -158,6 +158,15 @@ async function post(){
  }
  if(state.completed===8){stopClock();toast('You won!');status.textContent='Game complete!';render();celebrateWin();won=true}
  return won
+}
+function spacingFor(a){
+ const boardH=board?.clientHeight||620, usable=Math.max(330,boardH-160), cardH=62;
+ let natural=a.reduce((n,c)=>n+(c.faceUp?27:11),0)+cardH;
+ if(natural<=usable)return {up:27,down:11};
+ let excess=natural-usable, faces=a.filter(c=>c.faceUp).length, downs=a.length-faces;
+ let up=27,down=11,weight=faces+downs*.45;
+ if(weight>0){let cut=excess/weight;up=Math.max(14,27-cut);down=Math.max(7,11-cut*.45)}
+ return {up,down};
 }
 function offsets(a){let y=0,o=[],sp=spacingFor(a);for(const c of a){o.push(y);y+=c.faceUp?sp.up:sp.down}return o}
 function runLengthAt(col,index){
@@ -276,7 +285,7 @@ for(let c=0;c<10;c++){
 }
 await sleep(500);flyers.forEach(f=>f.remove());
 for(let c=0;c<10;c++){let x=state.stock.pop();x.faceUp=true;state.cols[c].push(x)}
-state.moves++;status.textContent='Dealt one new card to every column.';animating=false;post()
+state.moves++;status.textContent='Dealt one new card to every column.';await post();animating=false
 }
 function render(){columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.innerHTML=faceHTML(card);e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>pointerUp(ev,ci,i))}col.appendChild(e)});col.addEventListener('pointerup',e=>{if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});let deals=Math.floor(state.stock.length/10);stockEl.innerHTML='';for(let i=0;i<deals;i++){let s=document.createElement('div');s.className='stock-card';s.style.left=(i*10)+'px';s.style.top='2px';s.style.zIndex=i+1;stockEl.appendChild(s)}stockControl.disabled=!deals;stockControl.setAttribute('aria-label',deals?`Deal next row. ${deals} deals remaining`:'No deals remaining');completedEl.innerHTML='';for(let i=0;i<8;i++){let c=document.createElement('div');c.className=i<state.completed?'complete-card':'complete-slot';c.textContent=i<state.completed?'K♠':'♠';completedEl.appendChild(c)}undoBtn.disabled=!history.length;stats();setTimeout(()=>state.cols.forEach(col=>col.forEach(card=>delete card._justFlipped)),100)}
 function pointerDown(e,c,i,el){if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;if(!movable(c,i))return;pointer={id:e.pointerId,c,i,x:e.clientX,y:e.clientY,drag:false,el,h:null,dx:0,dy:0};el.setPointerCapture?.(e.pointerId);document.addEventListener('pointermove',pointerMove,{passive:false})}
