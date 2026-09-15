@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.8.1</title>
+<title>Spider Solitaire 1.0J.8.1.1</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -77,7 +77,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.8.1</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.8.1.1</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -505,13 +505,23 @@ function hintProgress(m){
  return completes||exposesHidden||createsNetEmpty||meaningfulJoin;
 }
 function allMoves(){
- let a=legalMoves().filter(m=>{
+ let legalList=legalMoves().filter(m=>{
   let sourceBecomesEmpty=m.index===0;
   let destinationEmpty=state.cols[m.to].length===0;
-  if(sourceBecomesEmpty&&destinationEmpty)return false;
-  return !m.destructive&&hintProgress(m);
+  return !(sourceBecomesEmpty&&destinationEmpty);
  });
- a.sort((x,y)=>y.score-x.score);
+ let preferred=legalList.filter(m=>!m.destructive&&hintProgress(m));
+ let a=preferred.length?preferred:legalList;
+ a.sort((x,y)=>{
+  if(prefs.suits===2){
+   let xm=state.cols[x.from][x.index],xd=state.cols[x.to],xt=xd[xd.length-1];
+   let ym=state.cols[y.from][y.index],yd=state.cols[y.to],yt=yd[yd.length-1];
+   let xs=!!xt&&((xt.suit||'♠')===(xm.suit||'♠'));
+   let ys=!!yt&&((yt.suit||'♠')===(ym.suit||'♠'));
+   if(xs!==ys)return ys-xs;
+  }
+  return y.score-x.score;
+ });
  let seen=new Set();
  return a.filter(m=>{let k=`${m.from}-${m.index}-${m.to}`;if(seen.has(k))return false;seen.add(k);return true});
 }
@@ -529,7 +539,7 @@ function colEl(c){return columnsEl.querySelector(`.column[data-col="${c}"]`)}
 function destinationPoint(to){let col=colEl(to),r=col.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[to],ys=offsets(cards);let y=cards.length?ys[cards.length-1]+27:0;return{x:r.left-br.left,y:r.top-br.top+y}}
 function motionStack(from,index,hint=false){let el=cardEl(from,index),cr=el.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[from].slice(index),h=document.createElement('div');h.className='motion-stack'+(hint?' hinting':'');h.style.width=cr.width+'px';let msp=spacingFor(cards).up;h.style.height=(cr.height+(cards.length-1)*msp)+'px';h.style.left=(cr.left-br.left)+'px';h.style.top=(cr.top-br.top)+'px';cards.forEach((c,n)=>{let d=document.createElement('div');d.className='motion-card';d.style.top=(n*msp)+'px';d.innerHTML=faceHTML(c);h.appendChild(d)});board.appendChild(h);return h}
 async function animatePreview(m,run,num,total){if(run.cancelled)return;render();let h=motionStack(m.from,m.index,true),start=cardEl(m.from,m.index).getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to);let sx=start.left-br.left,sy=start.top-br.top,dx=dest.x-sx,dy=dest.y-sy;hintCounter.textContent=`Hint ${num} of ${total}`;hintCounter.hidden=false;await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:550,easing:'ease-in-out',fill:'forwards'}).finished.catch(()=>{});if(run.cancelled){h.remove();return}await sleep(280);await h.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'translate(0,0)'}],{duration:450,easing:'ease-in-out',fill:'forwards'}).finished.catch(()=>{});h.remove();await sleep(180)}
-async function runHints(){if(hintRun){cancelHint('Hint tour stopped.');return}let ranked=allMoves(),good=ranked.filter(m=>m.score>0);let list=(good.length?good:ranked.slice(0,1)).slice(0,5);if(!list.length){status.textContent=state.stock.length>=10?'No useful tableau move found. Try Deal.':'No useful move found.';toast(state.stock.length>=10?'Try Deal':'No useful hint');return}let run={cancelled:false};hintRun=run;animating=true;status.textContent=`Showing ${list.length} possible move${list.length===1?'':'s'}…`;for(let n=0;n<list.length;n++){if(run.cancelled)break;await animatePreview(list[n],run,n+1,list.length)}if(!run.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent='Hint tour complete. Make any move you like.'}}
+async function runHints(){if(hintRun){cancelHint('Hint tour stopped.');return}let ranked=allMoves(),list=ranked.slice(0,5);if(!list.length){status.textContent=state.stock.length>=10?'No legal tableau move found. Try Deal.':'No legal move found.';toast(state.stock.length>=10?'Try Deal':'No legal move');return}let run={cancelled:false};hintRun=run;animating=true;status.textContent=`Showing ${list.length} possible move${list.length===1?'':'s'}…`;for(let n=0;n<list.length;n++){if(run.cancelled)break;await animatePreview(list[n],run,n+1,list.length)}if(!run.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent='Hint tour complete. Make any move you like.'}}
 async function animateReal(m,commit){
 animating=true;render();
 let h=motionStack(m.from,m.index),src=cardEl(m.from,m.index),sr=src.getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to),dx=dest.x-(sr.left-br.left),dy=dest.y-(sr.top-br.top);
@@ -590,7 +600,7 @@ newBtn.onclick=askNew;newBottom.onclick=askNew;
 $('settings').onclick=()=>{cancelHint();showSettings()};
 
 let devPressTimer=null;
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.8.1');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.8.1.1');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
