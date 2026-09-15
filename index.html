@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.10.4</title>
+<title>Spider Solitaire 1.0J.10.5</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -78,7 +78,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.10.4</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.10.5</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -515,17 +515,27 @@ function legalMoves(){
  return a;
 }
 function hintProgress(m){
- let s=state.cols[m.from], moving=s.slice(m.index), d=state.cols[m.to];
+ let s=state.cols[m.from],moving=s.slice(m.index),d=state.cols[m.to],top=d[d.length-1];
  let exposesHidden=m.index>0&&!s[m.index-1].faceUp;
- let emptiesSource=m.index===0;
- let destinationEmpty=d.length===0;
- let emptyToEmpty=emptiesSource&&destinationEmpty;
- if(emptyToEmpty)return false;
+ let emptiesSource=m.index===0,destinationEmpty=d.length===0;
+ if(emptiesSource&&destinationEmpty)return false;
  let completes=moveCompletesSuit(m.from,m.index,m.to);
- let joinsRun=d.length>0&&resultingRunLength(m.from,m.index,m.to)>moving.length;
- let meaningfulJoin=joinsRun&&(topRunLength(m.to)>=2||moving.length>=2);
+ let sameSuitJoin=!!top&&((top.suit||'♠')===((moving[0]?.suit)||'♠'));
+ let breaks=breaksBuiltRun(m.from,m.index);
  let createsNetEmpty=emptiesSource&&!destinationEmpty;
- return completes||exposesHidden||createsNetEmpty||meaningfulJoin;
+ let usefulEmpty=destinationEmpty&&(exposesHidden||moving.length>=2);
+
+ // Multi-suit hints are strategic recommendations, not a tour of every legal move.
+ // Never recommend breaking a built same-suit run unless the move completes a suit.
+ if(prefs.suits>1&&breaks&&!completes)return false;
+
+ // Mixed-suit placements stay legal for the player, but Hint only recommends one
+ // when it exposes a hidden card or creates a genuinely useful empty column.
+ if(prefs.suits>1&&top&&!sameSuitJoin&&!completes&&!exposesHidden&&!createsNetEmpty)return false;
+
+ let joinsRun=sameSuitJoin&&resultingRunLength(m.from,m.index,m.to)>moving.length;
+ let meaningfulJoin=joinsRun&&(topRunLength(m.to)>=1||moving.length>=1);
+ return completes||exposesHidden||createsNetEmpty||usefulEmpty||meaningfulJoin;
 }
 function allMoves(){
  let legalList=legalMoves().filter(m=>{
@@ -534,7 +544,7 @@ function allMoves(){
   return !(sourceBecomesEmpty&&destinationEmpty);
  });
  let preferred=legalList.filter(m=>!m.destructive&&hintProgress(m));
- let a=preferred.length?preferred:legalList;
+ let a=prefs.suits>1?preferred:(preferred.length?preferred:legalList);
  a.sort((x,y)=>{
   if(prefs.suits>1){
    let xm=state.cols[x.from][x.index],xd=state.cols[x.to],xt=xd[xd.length-1];
@@ -673,7 +683,7 @@ $('settings').onclick=()=>{cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.10.4');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.10.5');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
