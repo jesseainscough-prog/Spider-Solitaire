@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.5.1</title>
+<title>Spider Solitaire 1.0J.5.2</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
@@ -70,7 +70,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.5.1</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.5.2</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -159,8 +159,6 @@ function devNearWin(){
  // Final suit is intentionally one legal move from completion: Q→A sits on Q, K is exposed.
  state.cols[0]=[makeCard('K')];
  state.cols[1]=['Q','J','10','9','8','7','6','5','4','3','2','A'].map(r=>makeCard(r));
- // A few inert face-up cards make the test board look like a real late game.
- state.cols[2]=[makeCard('5')]; state.cols[3]=[makeCard('8')]; state.cols[4]=[makeCard('10')];
  status.textContent='Developer: Near Win loaded. Move Q→A onto K.';
  render();saveGame()
 }
@@ -179,6 +177,14 @@ async function devInstantWin(){
  render();saveGame();status.textContent='Developer: triggering win celebration…';
  await sleep(120);celebrateWin()
 }
+async function devPreviewCelebration(id){
+ document.querySelector('.dev-overlay')?.remove();
+ let chosen=celebrations.find(c=>c.id===id);if(!chosen)return;
+ cancelHint();let stage=document.createElement('div');stage.className='celebration-stage';board.appendChild(stage);
+ status.textContent='Developer preview: '+chosen.name;
+ await playCelebration(stage,chosen.id);stage.remove();
+ toast(chosen.name+' preview complete')
+}
 function devResetCelebrations(){
  setCollection([]);status.textContent='Developer: celebration collection reset.';
  document.querySelector('.dev-overlay')?.remove()
@@ -194,7 +200,9 @@ function showDeveloper(){
  <div class="dev-grid">
  <button data-dev="near">Near Win</button><button data-dev="win">Instant Win</button>
  <button data-dev="complete">Test Completed Suit</button><button data-dev="collection">Open Collection</button>
- <button data-dev="reset">Reset Celebrations</button><button data-dev="unlock">Unlock All</button>
+ <button data-preview="spider">Test Spider Shuffle</button><button data-preview="wave">Test Royal Wave</button>
+ <button data-preview="tower">Test Card Tower</button><button data-dev="reset">Reset Celebrations</button>
+ <button data-dev="unlock">Unlock All</button>
  </div><button class="dev-close">Close</button></div>`;
  board.appendChild(o);
  o.querySelector('.dev-close').onclick=()=>o.remove();
@@ -202,6 +210,7 @@ function showDeveloper(){
  o.querySelector('[data-dev="win"]').onclick=()=>{o.remove();devInstantWin()};
  o.querySelector('[data-dev="complete"]').onclick=()=>{o.remove();devCompletionTest()};
  o.querySelector('[data-dev="collection"]').onclick=()=>{o.remove();showCollection()};
+ o.querySelectorAll('[data-preview]').forEach(b=>b.onclick=()=>devPreviewCelebration(b.dataset.preview));
  o.querySelector('[data-dev="reset"]').onclick=devResetCelebrations;
  o.querySelector('[data-dev="unlock"]').onclick=devUnlockAll
 }
@@ -296,7 +305,7 @@ async function post(){
    await sleep(180);
   }
  }
- if(state.completed===8){stopClock();toast('You won!');status.textContent='Game complete!';render();celebrateWin();won=true}
+ if(state.completed===8&&state.stock.length===0&&state.cols.every(c=>c.length===0)){stopClock();toast('You won!');status.textContent='Game complete!';render();celebrateWin();won=true}
  return won
 }
 function spacingFor(a){
@@ -465,7 +474,7 @@ const askNew=()=>{
 newBtn.onclick=askNew;newBottom.onclick=askNew;
 
 let devPressTimer=null;
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.5.1');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.5.2');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
