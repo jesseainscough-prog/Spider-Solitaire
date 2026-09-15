@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.12</title>
+<title>Spider Solitaire 1.0J.12.2</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -78,7 +78,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.12</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.12.2</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -310,13 +310,29 @@ function devUnlockAll(){
  setCollection(celebrations.map(c=>c.id));status.textContent='Developer: all celebrations unlocked.';
  document.querySelector('.dev-overlay')?.remove()
 }
+function devNoMovesTest(withStock){
+ developerGame=true;dailyMode=false;dailyDate=null;cancelHint();closeStuckPopup();clearTimeout(inactivityTimer);stopClock();started=false;history=[];selected=null;animating=false;lastStuckSignature='';
+ // Ten occupied columns, each topped by the same rank. No top card can move onto another,
+ // and there are no empty columns, so legalMoves() must be empty.
+ let suits=activeSuits(),tops=['7','7','7','7','7','7','7','7','7','7'];
+ let cols=tops.map((r,i)=>[{id:9000+i,rank:r,suit:suits[i%suits.length],faceUp:true}]);
+ let stock=[];
+ if(withStock){
+  // Exactly one full deal remains. Ranks intentionally do not matter for the stuck pre-deal state.
+  stock=Array.from({length:10},(_,i)=>({id:9100+i,rank:'5',suit:suits[i%suits.length],faceUp:false}));
+ }
+ state={cols,stock,moves:12,completed:0,completedSuits:[],elapsed:45};
+ status.textContent=withStock?'Developer: no tableau moves; stock deal is available. Test Hint or wait 15 seconds.':'Developer: no legal moves and stock is empty. Test Hint or wait 15 seconds.';
+ render();saveGame();resetInactivity()
+}
 function showDeveloper(){
  document.querySelector('.dev-overlay')?.remove();
  let o=document.createElement('div');o.className='dev-overlay';
  o.innerHTML=`<div class="dev-panel"><h2>Developer Mode</h2><p>Testing tools only. Long-press the version number anytime to reopen this panel.</p>
  <div class="dev-grid">
  <button data-dev="near">Near Win</button><button data-dev="win">Instant Win</button>
- <button data-dev="complete">Test Completed Suit</button><button data-dev="collection">Open Collection</button><button data-dev="stats">Open Stats</button>
+ <button data-dev="complete">Test Completed Suit</button><button data-dev="stuck-stock">No Moves · Stock Available</button>
+ <button data-dev="stuck-empty">No Moves · Stock Empty</button><button data-dev="collection">Open Collection</button><button data-dev="stats">Open Stats</button>
  <button data-preview="spider">Test Spider Shuffle</button><button data-preview="wave">Test Royal Wave</button>
  <button data-preview="tower">Test Card Tower</button><button data-dev="reset">Reset Celebrations</button>
  <button data-dev="unlock">Unlock All</button>
@@ -326,6 +342,8 @@ function showDeveloper(){
  o.querySelector('[data-dev="near"]').onclick=()=>{o.remove();devNearWin()};
  o.querySelector('[data-dev="win"]').onclick=()=>{o.remove();devInstantWin()};
  o.querySelector('[data-dev="complete"]').onclick=()=>{o.remove();devCompletionTest()};
+ o.querySelector('[data-dev="stuck-stock"]').onclick=()=>{o.remove();devNoMovesTest(true)};
+ o.querySelector('[data-dev="stuck-empty"]').onclick=()=>{o.remove();devNoMovesTest(false)};
  o.querySelector('[data-dev="collection"]').onclick=()=>{o.remove();showCollection()};
  o.querySelector('[data-dev="stats"]').onclick=()=>{o.remove();showStats()};
  o.querySelectorAll('[data-preview]').forEach(b=>b.onclick=()=>devPreviewCelebration(b.dataset.preview));
@@ -608,14 +626,14 @@ let inactivityTimer=null,lastStuckSignature='';
 function positionSignature(){return state?`${state.moves}|${state.stock.length}|${state.completed}|${state.cols.map(c=>c.map(x=>x.id??x.rank).join('.')).join('/')}`:''}
 function closeStuckPopup(){document.querySelector('.stuck-overlay')?.remove()}
 function resetInactivity(){clearTimeout(inactivityTimer);if(!state||developerGame||document.querySelector('.settings-overlay,.daily-invite,.celebration-stage,.win-overlay'))return;inactivityTimer=setTimeout(()=>checkForStuck(),15000)}
-function showStuckPopup(canDeal){
- if(document.querySelector('.stuck-overlay'))return;let sig=positionSignature();if(sig===lastStuckSignature)return;lastStuckSignature=sig;
+function showStuckPopup(canDeal,force=false){
+ if(document.querySelector('.stuck-overlay'))return;let sig=positionSignature();if(!force&&sig===lastStuckSignature)return;lastStuckSignature=sig;
  let o=document.createElement('div');o.className='stuck-overlay';
  o.innerHTML=canDeal?`<div class="stuck-card"><h2>No Tableau Moves</h2><p>There are no card-to-card moves available, but you can still deal the next row.</p><div class="stuck-actions"><button class="stuck-secondary">Keep Looking</button><button class="stuck-primary">Deal Cards</button></div></div>`:`<div class="stuck-card"><h2>No More Moves</h2><p>There are no legal moves or stock deals remaining.</p><div class="stuck-actions"><button class="stuck-secondary">Close</button><button class="stuck-primary">New Deal</button></div></div>`;
  board.appendChild(o);o.querySelector('.stuck-secondary').onclick=()=>{o.remove();resetInactivity()};o.querySelector('.stuck-primary').onclick=()=>{o.remove();if(canDeal){deal();resetInactivity()}else{if(hasProgress()&&!developerGame)recordFinishedGame(false);dailyMode=false;dailyDate=null;newGame();resetInactivity()}};
 }
-function checkForStuck(){if(!state||animating||hintRun||developerGame||document.querySelector('.settings-overlay,.daily-invite,.celebration-stage,.win-overlay'))return false;if(legalMoves().length)return false;showStuckPopup(state.stock.length>=10);return true}
-async function runHints(){resetInactivity();if(hintRun){cancelHint('Hint tour stopped.');return}let ranked=allMoves(),list=ranked.slice(0,5);if(!list.length){status.textContent=state.stock.length>=10?'No legal tableau move found. Deal is available.':'No more legal moves.';checkForStuck();return}let run={cancelled:false};hintRun=run;animating=true;status.textContent=`Showing ${list.length} possible move${list.length===1?'':'s'}…`;for(let n=0;n<list.length;n++){if(run.cancelled)break;await animatePreview(list[n],run,n+1,list.length)}if(!run.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent='Hint tour complete. Make any move you like.'}}
+function checkForStuck(){if(!state||developerGame)return false;if(animating||hintRun||document.querySelector('.settings-overlay,.daily-invite,.celebration-stage,.win-overlay')){resetInactivity();return false}if(legalMoves().length)return false;showStuckPopup(state.stock.length>=10);return true}
+async function runHints(){resetInactivity();if(hintRun){cancelHint('Hint tour stopped.');return}let legalList=legalMoves();if(!legalList.length){status.textContent=state.stock.length>=10?'No tableau moves available. Deal the next row.':'No more legal moves.';showStuckPopup(state.stock.length>=10,true);return}let ranked=allMoves(),list=ranked.slice(0,5);if(!list.length){status.textContent='No helpful hint found for this position.';toast('No helpful hint found');return}let run={cancelled:false};hintRun=run;animating=true;status.textContent=`Showing ${list.length} possible move${list.length===1?'':'s'}…`;for(let n=0;n<list.length;n++){if(run.cancelled)break;await animatePreview(list[n],run,n+1,list.length)}if(!run.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent='Hint tour complete. Make any move you like.'}}
 async function revealCardFlip(el,card){
  if(!el||!card)return;
  let back=document.createElement('div'),edge=document.createElement('div');
@@ -706,7 +724,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.12');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.12.2');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
