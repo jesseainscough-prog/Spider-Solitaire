@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.8.1.2</title>
+<title>Spider Solitaire 1.0J.8.1.3</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -77,7 +77,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.8.1.2</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.8.1.3</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -251,7 +251,6 @@ function devCompletionTest(){developerGame=true;
  state={cols:Array.from({length:10},()=>[]),stock:[],moves:10,completed:0,elapsed:40};
  state.cols[0]=[makeCard('K')];
  state.cols[1]=['Q','J','10','9','8','7','6','5','4','3','2','A'].map(r=>makeCard(r));
- state.cols[2]=[makeCard('7')];state.cols[3]=[makeCard('9')];
  status.textContent='Developer: complete the K→A suit to test its flow animation.';
  render();saveGame()
 }
@@ -588,7 +587,7 @@ render();
 flyers.forEach(f=>f.remove());
 await post();render();animating=false
 }
-function render(){columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');if(!card.faceUp)e.style.background=cardBackStyle(prefs.cardBack);e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.innerHTML=faceHTML(card);e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>pointerUp(ev,ci,i))}col.appendChild(e)});col.addEventListener('pointerup',e=>{if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});let deals=Math.floor(state.stock.length/10);stockEl.innerHTML='';for(let i=0;i<deals;i++){let s=document.createElement('div');s.className='stock-card';s.style.background=cardBackStyle(prefs.cardBack);s.style.left=(i*10)+'px';s.style.top='2px';s.style.zIndex=i+1;stockEl.appendChild(s)}stockControl.disabled=!deals;stockControl.setAttribute('aria-label',deals?`Deal next row. ${deals} deals remaining`:'No deals remaining');completedEl.innerHTML='';for(let i=0;i<8;i++){let c=document.createElement('div');c.className=i<state.completed?'complete-card':'complete-slot';c.textContent=i<state.completed?'K'+((state.completedSuits&&state.completedSuits[i])||'♠'):'♠';completedEl.appendChild(c)}undoBtn.disabled=!history.length;stats();saveGame();setTimeout(()=>state.cols.forEach(col=>col.forEach(card=>delete card._justFlipped)),100)}
+function render(){if(modeLabel)modeLabel.textContent=`${prefs.suits===2?'2 Suits':'1 Suit'} • ${prefs.smartTap?'Smart Tap':'Manual Tap'}`;columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');if(!card.faceUp)e.style.background=cardBackStyle(prefs.cardBack);e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.innerHTML=faceHTML(card);e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>pointerUp(ev,ci,i))}col.appendChild(e)});col.addEventListener('pointerup',e=>{if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});let deals=Math.floor(state.stock.length/10);stockEl.innerHTML='';for(let i=0;i<deals;i++){let s=document.createElement('div');s.className='stock-card';s.style.background=cardBackStyle(prefs.cardBack);s.style.left=(i*10)+'px';s.style.top='2px';s.style.zIndex=i+1;stockEl.appendChild(s)}stockControl.disabled=!deals;stockControl.setAttribute('aria-label',deals?`Deal next row. ${deals} deals remaining`:'No deals remaining');completedEl.innerHTML='';for(let i=0;i<8;i++){let c=document.createElement('div');c.className=i<state.completed?'complete-card':'complete-slot';c.textContent=i<state.completed?'K'+((state.completedSuits&&state.completedSuits[i])||'♠'):'♠';completedEl.appendChild(c)}undoBtn.disabled=!history.length;stats();saveGame();setTimeout(()=>state.cols.forEach(col=>col.forEach(card=>delete card._justFlipped)),100)}
 function pointerDown(e,c,i,el){if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;if(!movable(c,i))return;pointer={id:e.pointerId,c,i,x:e.clientX,y:e.clientY,drag:false,el,h:null,dx:0,dy:0};el.setPointerCapture?.(e.pointerId);document.addEventListener('pointermove',pointerMove,{passive:false})}
 function pointerMove(e){if(!pointer||e.pointerId!==pointer.id)return;let dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.drag&&Math.hypot(dx,dy)<12)return;if(!pointer.drag){pointer.drag=true;pointer.h=motionStack(pointer.c,pointer.i);let r=pointer.el.getBoundingClientRect();pointer.dx=e.clientX-r.left;pointer.dy=e.clientY-r.top}e.preventDefault();let br=board.getBoundingClientRect();pointer.h.style.left=(e.clientX-br.left-pointer.dx)+'px';pointer.h.style.top=(e.clientY-br.top-pointer.dy)+'px';document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column');if(t&&legal(pointer.c,pointer.i,+t.dataset.col))t.classList.add('drop-target')}
 function pointerUp(e,c,i){document.removeEventListener('pointermove',pointerMove);if(!pointer)return;document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let p=pointer;pointer=null;if(p.drag){let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column'),to=t?+t.dataset.col:null;p.h?.remove();if(to!==null&&legal(p.c,p.i,to)){perform(p.c,p.i,to,'Dragged move completed.');return}render();return}prefs.smartTap?smart(c,i):manualTap(c,i)}
@@ -608,7 +607,8 @@ newBtn.onclick=askNew;newBottom.onclick=askNew;
 $('settings').onclick=()=>{cancelHint();showSettings()};
 
 let devPressTimer=null;
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.8.1.2');
+const modeLabel=document.getElementById('modeLabel');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.8.1.3');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
