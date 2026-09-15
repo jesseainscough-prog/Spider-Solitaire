@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0G</title>
+<title>Spider Solitaire 1.0G.1</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
@@ -50,7 +50,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0G</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0G.1</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -110,7 +110,7 @@ for(let c=0;c<10;c++){
  const col=colEl(c), tr=col.getBoundingClientRect(), f=document.createElement('div');
  f.className='card back';f.style.position='absolute';f.style.zIndex=1600+c;f.style.width=tr.width+'px';
  f.style.left=(sr.left-br.left+38)+'px';f.style.top=(sr.top-br.top+2)+'px';board.appendChild(f);flyers.push(f);
- const tx=(tr.left-br.left)-(sr.left-br.left+38), ty=(tr.top-br.top+offsets(state.cols[c]).slice(-1)[0]+27)-(sr.top-br.top+2);
+ const tx=(tr.left-br.left)-(sr.left-br.left+38), ty=(tr.top-br.top+(state.cols[c].length?offsets(state.cols[c]).slice(-1)[0]+27:0))-(sr.top-br.top+2);
  f.animate([{transform:'translate(0,0)'},{transform:`translate(${tx}px,${ty}px)`}],{duration:190,delay:c*32,easing:'cubic-bezier(.2,.8,.25,1)',fill:'forwards'});
 }
 await sleep(500);flyers.forEach(f=>f.remove());
@@ -122,7 +122,17 @@ function pointerDown(e,c,i,el){if(hintRun)cancelHint('Hint tour stopped.');if(an
 function pointerMove(e){if(!pointer||e.pointerId!==pointer.id)return;let dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.drag&&Math.hypot(dx,dy)<12)return;if(!pointer.drag){pointer.drag=true;pointer.h=motionStack(pointer.c,pointer.i);let r=pointer.el.getBoundingClientRect();pointer.dx=e.clientX-r.left;pointer.dy=e.clientY-r.top}e.preventDefault();let br=board.getBoundingClientRect();pointer.h.style.left=(e.clientX-br.left-pointer.dx)+'px';pointer.h.style.top=(e.clientY-br.top-pointer.dy)+'px';document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column');if(t&&legal(pointer.c,pointer.i,+t.dataset.col))t.classList.add('drop-target')}
 function pointerUp(e,c,i){document.removeEventListener('pointermove',pointerMove);if(!pointer)return;document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let p=pointer;pointer=null;if(p.drag){let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column'),to=t?+t.dataset.col:null;p.h?.remove();if(to!==null&&legal(p.c,p.i,to)){perform(p.c,p.i,to,'Dragged move completed.');return}render();return}smart(c,i)}
 async function undo(){if(hintRun)cancelHint('Hint tour stopped.');if(animating||!history.length)return;let previous=history[history.length-1],current=copy();let candidate=null;outer:for(let pc=0;pc<10;pc++)for(let cc=0;cc<10;cc++){if(pc===cc)continue;let p=previous.cols[pc],c=current.cols[cc];if(p.length>state.cols[pc].length&&c.length>previous.cols[cc].length){candidate={};break outer}}history.pop();state=previous;selected=null;status.textContent='Last action undone.';render()}
-undoBtn.onclick=undo;hintBtn.onclick=runHints;stockControl.onclick=deal;const askNew=()=>{cancelHint();if(confirm('Start a new game?'))newGame()};newBtn.onclick=askNew;newBottom.onclick=askNew;newGame();
+undoBtn.onclick=undo;hintBtn.onclick=runHints;stockControl.onclick=deal;const askNew=()=>{cancelHint();if(confirm('Start a new game?'))newGame()};newBtn.onclick=askNew;newBottom.onclick=askNew;
+try{
+  newGame();
+  if(!state||state.cols.length!==10||state.cols.reduce((n,c)=>n+c.length,0)!==54){
+    throw new Error('Initial deal validation failed');
+  }
+}catch(err){
+  console.error(err);
+  status.textContent='Game failed to start: '+err.message;
+  toast('Startup error');
+}
 })();
 </script>
 </body>
