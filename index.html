@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0G.1</title>
+<title>Spider Solitaire 1.0H</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
@@ -21,9 +21,9 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .empty-slot{position:absolute;top:0;left:0;width:100%;aspect-ratio:.69;border-radius:5px;border:1px dashed #ffffff33}
 .card{position:absolute;left:0;width:100%;aspect-ratio:.69;border-radius:5px;overflow:hidden;box-shadow:0 1px 2px #0006;user-select:none;-webkit-user-select:none;touch-action:none}
 .card.back{background:repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px);border:1.5px solid #e3edf7;outline:1px solid #174a7d;outline-offset:-4px}
-.card.face,.motion-card{background:var(--cream);color:#111;border:1px solid #d5d2c9;padding:3px 2px;font-family:Georgia,serif;font-weight:700}
-.rank{font-size:clamp(10px,3vw,22px);line-height:.95}.suit{font-size:clamp(8px,2.5vw,17px);line-height:1}
-.card.selected{outline:3px solid var(--gold);outline-offset:-2px}.card.just-flipped{animation:quickFlip .08s ease-out}@keyframes quickFlip{0%{transform:scaleX(.2)}100%{transform:scaleX(1)}}
+.card.face,.motion-card{background:linear-gradient(145deg,#fff,#f4f1e8);color:#090909;border:1px solid #c8c5bc;padding:3px 2px;font-family:Georgia,serif;font-weight:700;box-shadow:0 2px 4px #0007,inset 0 1px 0 #fff}
+.rank{font-size:clamp(14px,4.2vw,27px);line-height:.9;font-weight:800}.suit{font-size:clamp(18px,5.4vw,36px);line-height:.9;margin-top:3px;font-weight:900}
+.card.selected{outline:3px solid var(--gold);outline-offset:-2px}.card.just-flipped{animation:quickFlip .07s ease-out}@keyframes quickFlip{0%{transform:scaleX(.15)}100%{transform:scaleX(1)}}.early-flip{animation:quickFlip .07s ease-out}
 .watermark{position:absolute;left:0;right:0;top:180px;text-align:center;font-size:145px;color:#000;opacity:.05;pointer-events:none;z-index:1}
 .stock-wrap{position:absolute;right:13px;bottom:104px;z-index:3;text-align:center;font-size:11px}.stock-control{width:88px;height:64px;padding:0;background:transparent;border:0;cursor:pointer;touch-action:manipulation}.stock-control:disabled{opacity:.45}.stock{width:88px;height:59px;position:relative;margin:0 auto}
 .stock-card{position:absolute;width:39px;height:55px;border-radius:4px;background:repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px);border:1px solid #e3edf7}
@@ -50,7 +50,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0G.1</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0H</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -59,9 +59,9 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   <div id="hintCounter" class="hint-counter" hidden>Hint 1 of 5</div>
 </section>
 <footer class="toolbar">
-  <button id="undo" class="toolbar-btn" disabled>↶ Undo</button>
   <button id="hint" class="toolbar-btn">💡 Hint</button>
   <button id="newBottom" class="toolbar-btn">↻ New Game</button>
+  <button id="undo" class="toolbar-btn" disabled>↶ Undo</button>
 </footer>
 </main>
 <div id="status" class="status" aria-live="polite">Tap a movable card or stack. Smart Tap will make the best legal move.</div>
@@ -96,7 +96,15 @@ function destinationPoint(to){let col=colEl(to),r=col.getBoundingClientRect(),br
 function motionStack(from,index,hint=false){let el=cardEl(from,index),cr=el.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[from].slice(index),h=document.createElement('div');h.className='motion-stack'+(hint?' hinting':'');h.style.width=cr.width+'px';h.style.height=(cr.height+(cards.length-1)*27)+'px';h.style.left=(cr.left-br.left)+'px';h.style.top=(cr.top-br.top)+'px';cards.forEach((c,n)=>{let d=document.createElement('div');d.className='motion-card';d.style.top=(n*27)+'px';d.innerHTML=`<div class="rank">${c.rank}</div><div class="suit">♠</div>`;h.appendChild(d)});board.appendChild(h);return h}
 async function animatePreview(m,run,num,total){if(run.cancelled)return;render();let h=motionStack(m.from,m.index,true),start=cardEl(m.from,m.index).getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to);let sx=start.left-br.left,sy=start.top-br.top,dx=dest.x-sx,dy=dest.y-sy;hintCounter.textContent=`Hint ${num} of ${total}`;hintCounter.hidden=false;await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:550,easing:'ease-in-out',fill:'forwards'}).finished.catch(()=>{});if(run.cancelled){h.remove();return}await sleep(280);await h.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'translate(0,0)'}],{duration:450,easing:'ease-in-out',fill:'forwards'}).finished.catch(()=>{});h.remove();await sleep(180)}
 async function runHints(){if(hintRun){cancelHint('Hint tour stopped.');return}let list=allMoves().slice(0,5);if(!list.length){status.textContent=state.stock.length>=10?'No legal tableau move found. Try Deal.':'No legal move found.';toast('Try Deal');return}let run={cancelled:false};hintRun=run;animating=true;status.textContent=`Showing ${list.length} possible move${list.length===1?'':'s'}…`;for(let n=0;n<list.length;n++){if(run.cancelled)break;await animatePreview(list[n],run,n+1,list.length)}if(!run.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent='Hint tour complete. Make any move you like.'}}
-async function animateReal(m,commit){animating=true;render();let h=motionStack(m.from,m.index),src=cardEl(m.from,m.index),sr=src.getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to),dx=dest.x-(sr.left-br.left),dy=dest.y-(sr.top-br.top);state.cols[m.from].slice(m.index).forEach((_,n)=>{let e=cardEl(m.from,m.index+n);if(e)e.style.visibility='hidden'});await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:160,easing:'cubic-bezier(.2,.85,.25,1)',fill:'forwards'}).finished.catch(()=>{});commit();h.remove();animating=false}
+async function animateReal(m,commit){
+animating=true;render();
+let h=motionStack(m.from,m.index),src=cardEl(m.from,m.index),sr=src.getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to),dx=dest.x-(sr.left-br.left),dy=dest.y-(sr.top-br.top);
+state.cols[m.from].slice(m.index).forEach((_,n)=>{let e=cardEl(m.from,m.index+n);if(e)e.style.visibility='hidden'});
+let underIndex=m.index-1,under=underIndex>=0?state.cols[m.from][underIndex]:null,underEl=underIndex>=0?cardEl(m.from,underIndex):null;
+if(under&&!under.faceUp&&underEl){under.faceUp=true;underEl.className='card face early-flip';underEl.innerHTML=`<div class="rank">${under.rank}</div><div class="suit">♠</div>`}
+await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:160,easing:'cubic-bezier(.2,.85,.25,1)',fill:'forwards'}).finished.catch(()=>{});
+commit();h.remove();animating=false
+}
 async function perform(f,i,t,msg='Moved.'){if(animating||!legal(f,i,t))return false;cancelHint();let m={from:f,index:i,to:t};remember();startClock();await animateReal(m,()=>{state.cols[t].push(...state.cols[f].splice(i));flip(f);state.moves++;selected=null;status.textContent=msg;post()});return true}
 function smart(c,i){if(hintRun)cancelHint();if(animating)return;if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';return}let m=best(c,i);if(m)perform(c,i,m.to,'Smart move completed.');else{selected={col:c,index:i};status.textContent='No automatic move found. Tap a destination or drag.';render()}}
 function tapDest(c){if(selected)perform(selected.col,selected.index,c,'Manual move completed.')}
@@ -121,7 +129,13 @@ function render(){columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col
 function pointerDown(e,c,i,el){if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;if(!movable(c,i))return;pointer={id:e.pointerId,c,i,x:e.clientX,y:e.clientY,drag:false,el,h:null,dx:0,dy:0};el.setPointerCapture?.(e.pointerId);document.addEventListener('pointermove',pointerMove,{passive:false})}
 function pointerMove(e){if(!pointer||e.pointerId!==pointer.id)return;let dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.drag&&Math.hypot(dx,dy)<12)return;if(!pointer.drag){pointer.drag=true;pointer.h=motionStack(pointer.c,pointer.i);let r=pointer.el.getBoundingClientRect();pointer.dx=e.clientX-r.left;pointer.dy=e.clientY-r.top}e.preventDefault();let br=board.getBoundingClientRect();pointer.h.style.left=(e.clientX-br.left-pointer.dx)+'px';pointer.h.style.top=(e.clientY-br.top-pointer.dy)+'px';document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column');if(t&&legal(pointer.c,pointer.i,+t.dataset.col))t.classList.add('drop-target')}
 function pointerUp(e,c,i){document.removeEventListener('pointermove',pointerMove);if(!pointer)return;document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let p=pointer;pointer=null;if(p.drag){let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column'),to=t?+t.dataset.col:null;p.h?.remove();if(to!==null&&legal(p.c,p.i,to)){perform(p.c,p.i,to,'Dragged move completed.');return}render();return}smart(c,i)}
-async function undo(){if(hintRun)cancelHint('Hint tour stopped.');if(animating||!history.length)return;let previous=history[history.length-1],current=copy();let candidate=null;outer:for(let pc=0;pc<10;pc++)for(let cc=0;cc<10;cc++){if(pc===cc)continue;let p=previous.cols[pc],c=current.cols[cc];if(p.length>state.cols[pc].length&&c.length>previous.cols[cc].length){candidate={};break outer}}history.pop();state=previous;selected=null;status.textContent='Last action undone.';render()}
+async function undo(){
+if(hintRun)cancelHint('Hint tour stopped.');if(animating||!history.length)return;
+const previous=history[history.length-1],current=copy();animating=true;selected=null;let found=null;
+for(let from=0;from<10&&!found;from++)for(let to=0;to<10&&!found;to++){if(from===to)continue;let cf=current.cols[from],pf=previous.cols[from],ct=current.cols[to],pt=previous.cols[to];if(pf.length>cf.length&&ct.length>pt.length){let n=pf.length-cf.length;if(n===ct.length-pt.length)found={from,to,index:ct.length-n,n}}}
+if(found){render();let h=motionStack(found.to,found.index),src=cardEl(found.to,found.index);if(h&&src){let sr=src.getBoundingClientRect(),br=board.getBoundingClientRect(),dr=colEl(found.from).getBoundingClientRect(),baseCount=previous.cols[found.from].length-found.n,ys=offsets(previous.cols[found.from]),targetY=baseCount>0?ys[baseCount]:0,dx=(dr.left-br.left)-(sr.left-br.left),dy=(dr.top-br.top+targetY)-(sr.top-br.top);current.cols[found.to].slice(found.index).forEach((_,n)=>{let e=cardEl(found.to,found.index+n);if(e)e.style.visibility='hidden'});await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:190,easing:'cubic-bezier(.2,.8,.25,1)',fill:'forwards'}).finished.catch(()=>{});h.remove()}}else await sleep(90);
+history.pop();state=previous;animating=false;status.textContent='Last action undone.';render()
+}
 undoBtn.onclick=undo;hintBtn.onclick=runHints;stockControl.onclick=deal;const askNew=()=>{cancelHint();if(confirm('Start a new game?'))newGame()};newBtn.onclick=askNew;newBottom.onclick=askNew;
 try{
   newGame();
