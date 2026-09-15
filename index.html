@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.3.8</title>
+<title>Spider Solitaire 1.0J.3.9</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
@@ -41,7 +41,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .court-index{position:absolute;left:4%;top:4%;z-index:3;width:25%;color:#111;line-height:.84;text-align:center}
 .court-index span{display:block;font:800 21px Georgia,'Times New Roman',serif}
 .court-index b{display:block;font:800 18px Georgia,'Times New Roman',serif;margin-top:4px}
-.court-portrait{position:absolute;left:25%;top:2%;width:78%;height:98%;object-fit:cover;object-position:center top;display:block;border-radius:2px}.complete-fly{position:absolute;z-index:1900;pointer-events:none;filter:drop-shadow(0 3px 4px #0008)}.complete-card{animation:none}@keyframes completePop{0%{transform:scale(.55);opacity:.25}100%{transform:scale(1);opacity:1}}
+.court-portrait{position:absolute;left:27%;top:4%;width:82%;height:101%;object-fit:cover;object-position:52% 8%;display:block;border-radius:2px}.complete-fly{position:absolute;z-index:1900;pointer-events:none;filter:drop-shadow(0 3px 4px #0008)}.complete-card{animation:none}@keyframes completePop{0%{transform:scale(.55);opacity:.25}100%{transform:scale(1);opacity:1}}
 .win-overlay{position:absolute;inset:0;z-index:3000;background:#001d14cc;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 .win-panel{width:min(82%,360px);padding:24px 18px;border:1px solid #e8c879;border-radius:18px;background:#063f2e;text-align:center;box-shadow:0 20px 50px #0008}
 .win-panel h2{margin:0 0 8px;color:#efd58e;font:700 30px Georgia,serif}.win-panel p{margin:7px 0;color:#fff}.win-panel button{margin-top:14px;padding:11px 24px;border-radius:12px;border:1px solid #efd58e;background:#e5bd65;color:#173326;font-weight:800}
@@ -59,7 +59,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.3.8</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.3.9</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -249,13 +249,22 @@ function hintProgress(m){
  let s=state.cols[m.from], moving=s.slice(m.index), d=state.cols[m.to];
  let exposesHidden=m.index>0&&!s[m.index-1].faceUp;
  let emptiesSource=m.index===0;
+ let destinationEmpty=d.length===0;
+ let emptyToEmpty=emptiesSource&&destinationEmpty;
+ if(emptyToEmpty)return false;
  let completes=moveCompletesSuit(m.from,m.index,m.to);
  let joinsRun=d.length>0&&resultingRunLength(m.from,m.index,m.to)>moving.length;
  let meaningfulJoin=joinsRun&&(topRunLength(m.to)>=2||moving.length>=2);
- return completes||exposesHidden||emptiesSource||meaningfulJoin;
+ let createsNetEmpty=emptiesSource&&!destinationEmpty;
+ return completes||exposesHidden||createsNetEmpty||meaningfulJoin;
 }
 function allMoves(){
- let a=legalMoves().filter(m=>!m.destructive&&hintProgress(m));
+ let a=legalMoves().filter(m=>{
+  let sourceBecomesEmpty=m.index===0;
+  let destinationEmpty=state.cols[m.to].length===0;
+  if(sourceBecomesEmpty&&destinationEmpty)return false;
+  return !m.destructive&&hintProgress(m);
+ });
  a.sort((x,y)=>y.score-x.score);
  let seen=new Set();
  return a.filter(m=>{let k=`${m.from}-${m.index}-${m.to}`;if(seen.has(k))return false;seen.add(k);return true});
