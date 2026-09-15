@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.12.3</title>
+<title>Spider Solitaire 1.0J.12.4</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -78,7 +78,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.12.3</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.12.4</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -271,7 +271,7 @@ function hasProgress(){
  return !!state&&(state.moves>0||state.completed>0||state.stock.length<50||state.elapsed>0)
 }
 function makeCard(rank,faceUp=true){return {rank,faceUp}}
-function devNearWin(){developerGame=true;
+function devNearWin(){developerGame=true;developerStuckTest=false;
  cancelHint();stopClock();started=false;history=[];selected=null;animating=false;
  state={cols:Array.from({length:10},()=>[]),stock:[],moves:24,completed:7,elapsed:95};
  // Final suit is intentionally one legal move from completion: Q→A sits on Q, K is exposed.
@@ -280,7 +280,7 @@ function devNearWin(){developerGame=true;
  status.textContent='Developer: Near Win loaded. Move Q→A onto K.';
  render();saveGame()
 }
-function devCompletionTest(){developerGame=true;
+function devCompletionTest(){developerGame=true;developerStuckTest=false;
  cancelHint();stopClock();started=false;history=[];selected=null;animating=false;
  state={cols:Array.from({length:10},()=>[]),stock:[],moves:10,completed:0,elapsed:40};
  state.cols[0]=[makeCard('K')];
@@ -288,7 +288,7 @@ function devCompletionTest(){developerGame=true;
  status.textContent='Developer: complete the K→A suit to test its flow animation.';
  render();saveGame()
 }
-async function devInstantWin(){developerGame=true;
+async function devInstantWin(){developerGame=true;developerStuckTest=false;
  cancelHint();stopClock();started=false;history=[];selected=null;animating=false;
  state={cols:Array.from({length:10},()=>[]),stock:[],moves:42,completed:8,elapsed:123};
  render();saveGame();status.textContent='Developer: triggering win celebration…';
@@ -311,7 +311,7 @@ function devUnlockAll(){
  document.querySelector('.dev-overlay')?.remove()
 }
 function devNoMovesTest(withStock){
- developerGame=true;dailyMode=false;dailyDate=null;cancelHint();closeStuckPopup();clearTimeout(inactivityTimer);stopClock();started=false;history=[];selected=null;animating=false;lastStuckSignature='';
+ developerGame=true;developerStuckTest=true;dailyMode=false;dailyDate=null;cancelHint();closeStuckPopup();clearTimeout(inactivityTimer);stopClock();started=false;history=[];selected=null;animating=false;lastStuckSignature='';
  // Ten occupied columns, each topped by the same rank. No top card can move onto another,
  // and there are no empty columns, so legalMoves() must be empty.
  let suits=activeSuits(),tops=['7','7','7','7','7','7','7','7','7','7'];
@@ -355,7 +355,7 @@ function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60)
 function startClock(){if(started)return;started=true;startAt=Date.now()-state.elapsed*1000;timerId=setInterval(()=>{state.elapsed=Math.floor((Date.now()-startAt)/1000);stats();saveGame()},1000)}
 function stopClock(){clearInterval(timerId);timerId=null} function stats(){movesEl.textContent=state.moves;scoreEl.textContent=Math.max(0,500-state.moves+state.completed*100);timerEl.textContent=fmt(state.elapsed)}
 function cancelHint(msg=''){if(!hintRun)return;hintRun.cancelled=true;hintRun=null;hintCounter.hidden=true;document.querySelectorAll('.motion-stack').forEach(x=>x.remove());animating=false;if(msg)status.textContent=msg}
-function newGame(){cancelHint();closeStuckPopup();lastStuckSignature='';stopClock();started=false;history=[];selected=null;developerGame=false;let d=deck(),rng=dailyMode?seededRandom(seedFromString(`spider-${dailyDate}-${prefs.suits}`)):Math.random;shuffle(d,rng);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,completedSuits:[],elapsed:0};status.textContent=`${prefs.suits===4?'4-Suit':prefs.suits===2?'2-Suit':'1-Suit'} game. Tap a movable card or stack.`;render();resetInactivity()}
+function newGame(){cancelHint();closeStuckPopup();lastStuckSignature='';developerStuckTest=false;stopClock();started=false;history=[];selected=null;developerGame=false;let d=deck(),rng=dailyMode?seededRandom(seedFromString(`spider-${dailyDate}-${prefs.suits}`)):Math.random;shuffle(d,rng);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,completedSuits:[],elapsed:0};status.textContent=`${prefs.suits===4?'4-Suit':prefs.suits===2?'2-Suit':'1-Suit'} game. Tap a movable card or stack.`;render();resetInactivity()}
 function movable(c,i){let a=state.cols[c];if(i<0||!a[i]?.faceUp)return false;for(let x=i;x<a.length-1;x++)if(!a[x+1].faceUp||val(a[x].rank)!==val(a[x+1].rank)+1||(prefs.suits>1&&(a[x].suit||'♠')!==(a[x+1].suit||'♠')))return false;return true}
 function legal(f,i,t){if(f===t||!movable(f,i))return false;let m=state.cols[f][i],d=state.cols[t];return !d.length||val(d[d.length-1].rank)===val(m.rank)+1}
 function flip(c){let a=state.cols[c];if(a.length&&!a[a.length-1].faceUp){a[a.length-1].faceUp=true;a[a.length-1]._justFlipped=true}}
@@ -622,7 +622,7 @@ async function animatePreview(m,run,num,total){
  }
  await sleep(150)
 }
-let inactivityTimer=null,lastStuckSignature='';
+let inactivityTimer=null,lastStuckSignature='',developerStuckTest=false;
 function positionSignature(){return state?`${state.moves}|${state.stock.length}|${state.completed}|${state.cols.map(c=>c.map(x=>x.id??x.rank).join('.')).join('/')}`:''}
 function closeStuckPopup(){document.querySelector('.stuck-overlay')?.remove()}
 function resetInactivity(){clearTimeout(inactivityTimer);if(!state||developerGame||document.querySelector('.settings-overlay,.daily-invite,.celebration-stage,.win-overlay'))return;inactivityTimer=setTimeout(()=>checkForStuck(),15000)}
@@ -632,7 +632,7 @@ function showStuckPopup(canDeal,force=false){
  o.innerHTML=canDeal?`<div class="stuck-card"><h2>No Tableau Moves</h2><p>There are no card-to-card moves available, but you can still deal the next row.</p><div class="stuck-actions"><button class="stuck-secondary">Keep Looking</button><button class="stuck-primary">Deal Cards</button></div></div>`:`<div class="stuck-card"><h2>No More Moves</h2><p>There are no legal moves or stock deals remaining.</p><div class="stuck-actions"><button class="stuck-secondary">Close</button><button class="stuck-primary">New Deal</button></div></div>`;
  board.appendChild(o);o.querySelector('.stuck-secondary').onclick=()=>{o.remove();resetInactivity()};o.querySelector('.stuck-primary').onclick=()=>{o.remove();if(canDeal){deal();resetInactivity()}else{if(hasProgress()&&!developerGame)recordFinishedGame(false);dailyMode=false;dailyDate=null;newGame();resetInactivity()}};
 }
-function checkForStuck(){if(!state||developerGame)return false;if(animating||hintRun||document.querySelector('.settings-overlay,.daily-invite,.celebration-stage,.win-overlay')){resetInactivity();return false}if(legalMoves().length)return false;showStuckPopup(state.stock.length>=10);return true}
+function checkForStuck(){if(!state||(developerGame&&!developerStuckTest))return false;if(animating||hintRun||document.querySelector('.settings-overlay,.daily-invite,.celebration-stage,.win-overlay')){resetInactivity();return false}if(legalMoves().length)return false;showStuckPopup(state.stock.length>=10);return true}
 async function runHints(){resetInactivity();if(hintRun){cancelHint('Hint tour stopped.');return}let legalList=legalMoves();if(!legalList.length){status.textContent=state.stock.length>=10?'No tableau moves available. Deal the next row.':'No more legal moves.';showStuckPopup(state.stock.length>=10,true);return}let ranked=allMoves(),list=ranked.slice(0,5);if(!list.length){status.textContent='No helpful hint found for this position.';toast('No helpful hint found');return}let run={cancelled:false};hintRun=run;animating=true;status.textContent=`Showing ${list.length} possible move${list.length===1?'':'s'}…`;for(let n=0;n<list.length;n++){if(run.cancelled)break;await animatePreview(list[n],run,n+1,list.length)}if(!run.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent='Hint tour complete. Make any move you like.'}}
 async function revealCardFlip(el,card){
  if(!el||!card)return;
@@ -724,7 +724,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.12.3');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.12.4');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
