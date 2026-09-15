@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.8.1.1</title>
+<title>Spider Solitaire 1.0J.8.1.2</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -77,7 +77,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.8.1.1</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.8.1.2</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -382,7 +382,7 @@ async function post(){
    let pc=state._pendingComplete;
    await animateCompletion(pc);
    state.cols[c].splice(pc.index,13);
-   state.completed++;state.completedSuits=state.completedSuits||[];state.completedSuits.push((p.cards[0]?.suit)||'♠');
+   state.completed++;state.completedSuits=state.completedSuits||[];state.completedSuits.push((pc.cards[0]?.suit)||'♠');
    flip(c);
    state._pendingComplete=null;
    status.textContent='Suit completed!';
@@ -390,7 +390,7 @@ async function post(){
    await sleep(180);
   }
  }
- if(state.completed===8&&state.stock.length===0&&state.cols.every(c=>c.length===0)){stopClock();toast('You won!');status.textContent='Game complete!';recordFinishedGame(true);render();celebrateWin();won=true}
+ if(state.completed===8&&state.stock.length===0&&state.cols.every(c=>c.length===0)){stopClock();toast('You won!');status.textContent='Game complete!';recordFinishedGame(true);render();if(!document.querySelector('.win-overlay,.celebration-stage'))celebrateWin();won=true}
  return won
 }
 function spacingFor(a){
@@ -541,13 +541,21 @@ function motionStack(from,index,hint=false){let el=cardEl(from,index),cr=el.getB
 async function animatePreview(m,run,num,total){if(run.cancelled)return;render();let h=motionStack(m.from,m.index,true),start=cardEl(m.from,m.index).getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to);let sx=start.left-br.left,sy=start.top-br.top,dx=dest.x-sx,dy=dest.y-sy;hintCounter.textContent=`Hint ${num} of ${total}`;hintCounter.hidden=false;await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:550,easing:'ease-in-out',fill:'forwards'}).finished.catch(()=>{});if(run.cancelled){h.remove();return}await sleep(280);await h.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'translate(0,0)'}],{duration:450,easing:'ease-in-out',fill:'forwards'}).finished.catch(()=>{});h.remove();await sleep(180)}
 async function runHints(){if(hintRun){cancelHint('Hint tour stopped.');return}let ranked=allMoves(),list=ranked.slice(0,5);if(!list.length){status.textContent=state.stock.length>=10?'No legal tableau move found. Try Deal.':'No legal move found.';toast(state.stock.length>=10?'Try Deal':'No legal move');return}let run={cancelled:false};hintRun=run;animating=true;status.textContent=`Showing ${list.length} possible move${list.length===1?'':'s'}…`;for(let n=0;n<list.length;n++){if(run.cancelled)break;await animatePreview(list[n],run,n+1,list.length)}if(!run.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent='Hint tour complete. Make any move you like.'}}
 async function animateReal(m,commit){
-animating=true;render();
-let h=motionStack(m.from,m.index),src=cardEl(m.from,m.index),sr=src.getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to),dx=dest.x-(sr.left-br.left),dy=dest.y-(sr.top-br.top);
-state.cols[m.from].slice(m.index).forEach((_,n)=>{let e=cardEl(m.from,m.index+n);if(e)e.style.visibility='hidden'});
-let underIndex=m.index-1,under=underIndex>=0?state.cols[m.from][underIndex]:null,underEl=underIndex>=0?cardEl(m.from,underIndex):null;
-if(under&&!under.faceUp&&underEl){under.faceUp=true;underEl.className='card face early-flip';underEl.innerHTML=faceHTML(under)}
-await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:160,easing:'cubic-bezier(.2,.85,.25,1)',fill:'forwards'}).finished.catch(()=>{});
-await commit();render();h.remove();animating=false
+ animating=true;render();
+ let h=null;
+ try{
+  h=motionStack(m.from,m.index);
+  let src=cardEl(m.from,m.index),sr=src.getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to),dx=dest.x-(sr.left-br.left),dy=dest.y-(sr.top-br.top);
+  state.cols[m.from].slice(m.index).forEach((_,n)=>{let e=cardEl(m.from,m.index+n);if(e)e.style.visibility='hidden'});
+  let underIndex=m.index-1,under=underIndex>=0?state.cols[m.from][underIndex]:null,underEl=underIndex>=0?cardEl(m.from,underIndex):null;
+  if(under&&!under.faceUp&&underEl){under.faceUp=true;underEl.className='card face early-flip';underEl.innerHTML=faceHTML(under)}
+  await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:160,easing:'cubic-bezier(.2,.85,.25,1)',fill:'forwards'}).finished.catch(()=>{});
+  await commit();
+ }finally{
+  h?.remove();
+  animating=false;
+  render();
+ }
 }
 async function perform(f,i,t,msg='Moved.'){if(animating||!legal(f,i,t))return false;cancelHint();let m={from:f,index:i,to:t};remember();startClock();await animateReal(m,async()=>{state.cols[t].push(...state.cols[f].splice(i));flip(f);state.moves++;selected=null;status.textContent=msg;await post()});return true}
 function manualTap(c,i){
@@ -600,7 +608,7 @@ newBtn.onclick=askNew;newBottom.onclick=askNew;
 $('settings').onclick=()=>{cancelHint();showSettings()};
 
 let devPressTimer=null;
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.8.1.1');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.8.1.2');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
