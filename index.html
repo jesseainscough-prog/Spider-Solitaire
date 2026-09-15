@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.10.1</title>
+<title>Spider Solitaire 1.0J.10.2</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -78,7 +78,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.10.1</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.10.2</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -562,20 +562,45 @@ function colEl(c){return columnsEl.querySelector(`.column[data-col="${c}"]`)}
 function destinationPoint(to){let col=colEl(to),r=col.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[to],ys=offsets(cards);let y=cards.length?ys[cards.length-1]+27:0;return{x:r.left-br.left,y:r.top-br.top+y}}
 function motionStack(from,index,hint=false){let el=cardEl(from,index),cr=el.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[from].slice(index),h=document.createElement('div');h.className='motion-stack'+(hint?' hinting':'');h.style.width=cr.width+'px';let msp=spacingFor(cards).up;h.style.height=(cr.height+(cards.length-1)*msp)+'px';h.style.left=(cr.left-br.left)+'px';h.style.top=(cr.top-br.top)+'px';cards.forEach((c,n)=>{let d=document.createElement('div');d.className='motion-card';d.style.top=(n*msp)+'px';d.innerHTML=faceHTML(c);h.appendChild(d)});board.appendChild(h);return h}
 async function animatePreview(m,run,num,total){
- if(run.cancelled)return;render();
- let originals=state.cols[m.from].slice(m.index).map((_,n)=>cardEl(m.from,m.index+n)).filter(Boolean);
- let h=motionStack(m.from,m.index,true),start=cardEl(m.from,m.index).getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to);
- originals.forEach(e=>e.style.visibility='hidden');
- let sx=start.left-br.left,sy=start.top-br.top,dx=dest.x-sx,dy=dest.y-sy;
+ if(run.cancelled)return;
+ render();
+ let moving=state.cols[m.from].slice(m.index).map((_,n)=>cardEl(m.from,m.index+n)).filter(Boolean);
+ let first=moving[0];if(!first)return;
+ let start=first.getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to);
+ let dx=dest.x-(start.left-br.left),dy=dest.y-(start.top-br.top);
  hintCounter.textContent=`Hint ${num} of ${total}`;hintCounter.hidden=false;
+ moving.forEach(e=>{e.style.willChange='transform';e.style.zIndex=1200+(+e.dataset.index||0);e.style.outline='2px solid var(--gold)';e.style.outlineOffset='-2px'});
  try{
-  await h.animate([{transform:'translate3d(0,0,0)'},{transform:`translate3d(${dx}px,${dy}px,0)`}],{duration:520,easing:'cubic-bezier(.25,.75,.25,1)',fill:'forwards'}).finished.catch(()=>{});
-  if(run.cancelled)return;await sleep(240);
-  await h.animate([{transform:`translate3d(${dx}px,${dy}px,0)`},{transform:'translate3d(0,0,0)'}],{duration:420,easing:'cubic-bezier(.25,.75,.25,1)',fill:'forwards'}).finished.catch(()=>{});
- }finally{h.remove();originals.forEach(e=>e.style.visibility='visible')}
- await sleep(160)
+  let outs=moving.map(e=>e.animate([{transform:'translate3d(0,0,0)'},{transform:`translate3d(${dx}px,${dy}px,0)`}],{duration:500,easing:'cubic-bezier(.22,.75,.25,1)',fill:'forwards'}));
+  await Promise.all(outs.map(a=>a.finished.catch(()=>{})));
+  if(run.cancelled)return;
+  await sleep(260);
+  let backs=moving.map(e=>e.animate([{transform:`translate3d(${dx}px,${dy}px,0)`},{transform:'translate3d(0,0,0)'}],{duration:400,easing:'cubic-bezier(.22,.75,.25,1)',fill:'forwards'}));
+  await Promise.all(backs.map(a=>a.finished.catch(()=>{})));
+ }finally{
+  moving.forEach(e=>{e.getAnimations().forEach(a=>a.cancel());e.style.transform='';e.style.willChange='';e.style.outline='';e.style.outlineOffset=''});
+ }
+ await sleep(150)
 }
 async function runHints(){if(hintRun){cancelHint('Hint tour stopped.');return}let ranked=allMoves(),list=ranked.slice(0,5);if(!list.length){status.textContent=state.stock.length>=10?'No legal tableau move found. Try Deal.':'No legal move found.';toast(state.stock.length>=10?'Try Deal':'No legal move');return}let run={cancelled:false};hintRun=run;animating=true;status.textContent=`Showing ${list.length} possible move${list.length===1?'':'s'}…`;for(let n=0;n<list.length;n++){if(run.cancelled)break;await animatePreview(list[n],run,n+1,list.length)}if(!run.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent='Hint tour complete. Make any move you like.'}}
+async function revealCardFlip(el,card){
+ if(!el||!card)return;
+ let back=document.createElement('div');
+ back.className='card back reveal-flip-layer';
+ back.style.position='absolute';back.style.inset='0';back.style.top='0';back.style.zIndex='5';
+ back.style.background=cardBackStyle(prefs.cardBack);
+ back.style.transformOrigin='center center';back.style.backfaceVisibility='hidden';back.style.webkitBackfaceVisibility='hidden';
+ el.innerHTML='';el.className='card face has-index';el.style.overflow='visible';
+ el.appendChild(back);
+ let a=back.animate([{transform:'scaleX(1)'},{transform:'scaleX(.03)'}],{duration:120,easing:'ease-in',fill:'forwards'});
+ await a.finished.catch(()=>{});
+ back.remove();
+ el.innerHTML=faceHTML(card);
+ el.className='card face has-index';
+ let b=el.animate([{transform:'scaleX(.03)'},{transform:'scaleX(1)'}],{duration:150,easing:'ease-out'});
+ await b.finished.catch(()=>{});
+}
+
 async function animateReal(m,commit){
  animating=true;render();
  let h=null;
@@ -584,8 +609,10 @@ async function animateReal(m,commit){
   let src=cardEl(m.from,m.index),sr=src.getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to),dx=dest.x-(sr.left-br.left),dy=dest.y-(sr.top-br.top);
   state.cols[m.from].slice(m.index).forEach((_,n)=>{let e=cardEl(m.from,m.index+n);if(e)e.style.visibility='hidden'});
   let underIndex=m.index-1,under=underIndex>=0?state.cols[m.from][underIndex]:null,underEl=underIndex>=0?cardEl(m.from,underIndex):null;
-  if(under&&!under.faceUp&&underEl){under.faceUp=true;underEl.className='card face early-flip';underEl.innerHTML=faceHTML(under)}
+  let revealPromise=null;
+  if(under&&!under.faceUp&&underEl){under.faceUp=true;revealPromise=revealCardFlip(underEl,under)}
   await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:160,easing:'cubic-bezier(.2,.85,.25,1)',fill:'forwards'}).finished.catch(()=>{});
+  if(revealPromise)await revealPromise;
   await commit();
  }finally{
   h?.remove();
@@ -645,7 +672,7 @@ $('settings').onclick=()=>{cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.10.1');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.10.2');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
