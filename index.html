@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.8</title>
+<title>Spider Solitaire 1.0J.8.1</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -77,7 +77,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.8</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.8.1</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -420,6 +420,8 @@ function breaksBuiltRun(f,i){
  let s=state.cols[f];
  if(i<=0||!s[i-1]?.faceUp)return false;
  if(val(s[i-1].rank)!==val(s[i].rank)+1)return false;
+ // In multi-suit Spider, only protect a genuinely built same-suit run.
+ if(prefs.suits===2&&(s[i-1].suit||'♠')!==(s[i].suit||'♠'))return false;
  // If removing the tail exposes a hidden card, that is strategically constructive.
  if(i===1&&!s[0].faceUp)return false;
  return true;
@@ -430,6 +432,7 @@ function topRunLength(col){
  let n=1;
  for(let x=a.length-1;x>0;x--){
   if(!a[x-1].faceUp||val(a[x-1].rank)!==val(a[x].rank)+1)break;
+  if(prefs.suits===2&&(a[x-1].suit||'♠')!==(a[x].suit||'♠'))break;
   n++;
  }
  return n;
@@ -437,19 +440,30 @@ function topRunLength(col){
 function resultingRunLength(f,i,to){
  let dest=state.cols[to], moving=state.cols[f].slice(i);
  if(!dest.length)return moving.length;
+ let destTop=dest[dest.length-1],movingTop=moving[0];
+ if(prefs.suits===2&&(destTop.suit||'♠')!==(movingTop.suit||'♠'))return moving.length;
  return topRunLength(to)+moving.length;
 }
 function scoreMove(f,i,t){
  let s=state.cols[f],d=state.cols[t],moving=s.slice(i),n=moving.length,score=0;
  let exposesHidden=i>0&&!s[i-1].faceUp;
- let destTop=d[d.length-1];
+ let destTop=d[d.length-1],movingTop=moving[0];
+ let sameSuitDest=!!destTop&&((destTop.suit||'♠')===(movingTop.suit||'♠'));
+ let mixedSuitDest=!!destTop&&!sameSuitDest;
  let combined=resultingRunLength(f,i,t);
 
  // Winning/completing a suit dominates every other choice.
  if(moveCompletesSuit(f,i,t))score+=100000;
 
- // Smart Tap should prefer the destination that creates the longest continuous run.
- // Quadratic weighting makes K→2 decisively better than Q→2, etc.
+ // In 2-suit play, joining the same suit is the primary Smart Tap preference.
+ // A legal mixed-suit placement remains available manually, but Smart Tap should
+ // choose it only when there is no strategically better same-suit destination.
+ if(prefs.suits===2){
+  if(sameSuitDest)score+=12000;
+  if(mixedSuitDest)score-=6000;
+ }
+
+ // Prefer the destination that creates the longest true movable same-suit run.
  score+=combined*combined*180;
 
  // Extending an existing organized destination is better than using an empty column.
@@ -459,8 +473,11 @@ function scoreMove(f,i,t){
  // Exposing a hidden card is strategically valuable.
  if(exposesHidden)score+=5000;
 
- // Preserve already-built source structure unless the move has a strong payoff.
- if(breaksBuiltRun(f,i)&&!exposesHidden&&!moveCompletesSuit(f,i,t))score-=4500+n*180;
+ // Strongly preserve already-built same-suit source structure.
+ if(breaksBuiltRun(f,i)&&!moveCompletesSuit(f,i,t)){
+  score-=prefs.suits===2?14000+n*250:4500+n*180;
+  if(exposesHidden)score+=prefs.suits===2?3500:4500;
+ }
 
  // Prefer consolidating more cards into one useful run.
  score+=n*70;
@@ -500,6 +517,10 @@ function allMoves(){
 }
 function best(f,i){
  let a=legalMoves().filter(m=>m.from===f&&m.index===i);
+ if(prefs.suits===2){
+  let moving=state.cols[f][i],same=a.filter(m=>{let d=state.cols[m.to],top=d[d.length-1];return top&&(top.suit||'♠')===(moving.suit||'♠')});
+  if(same.length)a=same;
+ }
  a.sort((x,y)=>y.score-x.score);
  return a[0]||null;
 }
@@ -569,7 +590,7 @@ newBtn.onclick=askNew;newBottom.onclick=askNew;
 $('settings').onclick=()=>{cancelHint();showSettings()};
 
 let devPressTimer=null;
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.8');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.8.1');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
