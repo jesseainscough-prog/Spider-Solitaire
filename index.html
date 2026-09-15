@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.5.2</title>
+<title>Spider Solitaire 1.0J.6</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
@@ -55,7 +55,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .dev-panel h2{margin:0 0 4px;color:#efd58e;font:700 24px Georgia,serif}.dev-panel p{margin:0 0 14px;opacity:.75;font-size:12px;line-height:1.4}
 .dev-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.dev-grid button,.dev-close{border:1px solid #ffffff33;background:#ffffff10;color:#fff;border-radius:11px;padding:12px 8px;font-weight:800}
 .dev-grid button:active,.dev-close:active{transform:scale(.97)}.dev-close{width:100%;margin-top:12px;color:#efd58e}
-.collection-tile{min-height:118px;border:1px solid #ffffff25;border-radius:12px;background:#ffffff0c;padding:8px;text-align:center;color:#fff}.collection-tile.locked{opacity:.38;filter:grayscale(1)}.collection-icon{height:70px;display:flex;align-items:center;justify-content:center;font-size:36px}.collection-name{font-weight:800;font-size:12px;color:#efd58e}.collection-state{font-size:10px;opacity:.7;margin-top:3px}
+.collection-tile{min-height:118px;border:1px solid #ffffff25;border-radius:12px;background:#ffffff0c;padding:8px;text-align:center;color:#fff}.collection-tile.locked{opacity:.38;filter:grayscale(1)}.collection-icon{height:70px;display:flex;align-items:center;justify-content:center;font-size:36px}.collection-name{font-weight:800;font-size:12px;color:#efd58e}.collection-state{font-size:10px;opacity:.7;margin-top:3px}.stats-overlay{position:absolute;inset:0;z-index:3450;background:#001d14f5;padding:18px 14px;overflow:auto}.stats-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.stats-head h2{margin:0;color:#efd58e;font:700 25px Georgia,serif}.stats-close{border:1px solid #ffffff44;background:#ffffff12;color:#fff;border-radius:10px;padding:8px 12px}.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}.stats-tile{border:1px solid #ffffff22;background:#ffffff0b;border-radius:12px;padding:10px 6px;text-align:center}.stats-tile span{display:block;font-size:10px;opacity:.65}.stats-tile b{display:block;color:#efd58e;font-size:18px;margin-top:3px}.history-title{color:#efd58e;font:700 17px Georgia,serif;margin:8px 0}.history-row{display:grid;grid-template-columns:52px 1fr 1fr 1fr;gap:6px;padding:9px 7px;border-top:1px solid #ffffff18;font-size:11px}.history-row.win .result{color:#efd58e}.result{font-weight:800}.history-empty{text-align:center;opacity:.6;padding:24px 0}.stats-link{text-decoration:underline;text-underline-offset:2px}
 
 </style>
 </head>
@@ -70,7 +70,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.5.2</span></div>
+<div class="subbar"><span id="statsLink" class="stats-link">1 Suit • Smart Tap • Stats</span><span>v1.0J.6</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -108,6 +108,23 @@ function deck(){let d=[],id=0;for(let s=0;s<8;s++)for(const rank of ranks)d.push
 function shuffle(a){for(let i=a.length-1;i;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
 const SAVE_KEY='spider-solitaire-j4-save';
 const COLLECTION_KEY='spider-solitaire-celebrations';
+const PLAYER_STATS_KEY='spider-solitaire-player-stats';
+function defaultPlayerStats(){return {gamesPlayed:0,wins:0,currentStreak:0,bestStreak:0,bestTime:null,fewestMoves:null,bestScore:null,history:[]}}
+function getPlayerStats(){try{return Object.assign(defaultPlayerStats(),JSON.parse(localStorage.getItem(PLAYER_STATS_KEY)||'{}'))}catch(e){return defaultPlayerStats()}}
+function setPlayerStats(s){try{localStorage.setItem(PLAYER_STATS_KEY,JSON.stringify(s))}catch(e){}}
+let developerGame=false;
+function gameScore(){return Math.max(0,500-state.moves+state.completed*100)}
+function recordFinishedGame(won){
+ if(developerGame)return;let s=getPlayerStats(),score=gameScore();s.gamesPlayed++;
+ if(won){s.wins++;s.currentStreak++;s.bestStreak=Math.max(s.bestStreak,s.currentStreak);s.bestTime=s.bestTime==null?state.elapsed:Math.min(s.bestTime,state.elapsed);s.fewestMoves=s.fewestMoves==null?state.moves:Math.min(s.fewestMoves,state.moves);s.bestScore=s.bestScore==null?score:Math.max(s.bestScore,score)}else s.currentStreak=0;
+ s.history.unshift({won,score,moves:state.moves,time:state.elapsed,at:Date.now()});s.history=s.history.slice(0,10);setPlayerStats(s)
+}
+function showStats(){
+ document.querySelector('.stats-overlay')?.remove();let s=getPlayerStats(),pct=s.gamesPlayed?Math.round(s.wins/s.gamesPlayed*100):0,owned=getCollection().length,o=document.createElement('div');o.className='stats-overlay';
+ let tiles=[['Games',s.gamesPlayed],['Wins',s.wins],['Win %',pct+'%'],['Current Streak',s.currentStreak],['Best Streak',s.bestStreak],['Celebrations',owned+'/'+celebrations.length],['Fastest Win',s.bestTime==null?'—':fmt(s.bestTime)],['Fewest Moves',s.fewestMoves==null?'—':s.fewestMoves],['Best Score',s.bestScore==null?'—':s.bestScore]];
+ o.innerHTML=`<div class="stats-head"><h2>Stats & History</h2><button class="stats-close">Close</button></div><div class="stats-grid">${tiles.map(x=>`<div class="stats-tile"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div><div class="history-title">Recent Games</div>${s.history.length?s.history.map(g=>`<div class="history-row ${g.won?'win':''}"><span class="result">${g.won?'WIN':'LOSS'}</span><span>${g.score} pts</span><span>${g.moves} moves</span><span>${fmt(g.time)}</span></div>`).join(''):`<div class="history-empty">No completed games yet.</div>`}`;board.appendChild(o);o.querySelector('.stats-close').onclick=()=>o.remove()
+}
+
 const celebrations=[{id:'spider',name:'Spider Shuffle',icon:'🕷️'},{id:'wave',name:'Royal Wave',icon:'〰️'},{id:'tower',name:'Card Tower',icon:'♠️'}];
 function getCollection(){try{return JSON.parse(localStorage.getItem(COLLECTION_KEY)||'[]')}catch(e){return []}}
 function setCollection(a){try{localStorage.setItem(COLLECTION_KEY,JSON.stringify([...new Set(a)]))}catch(e){}}
@@ -126,7 +143,7 @@ function saveGame(){
  if(!state)return;
  try{
   localStorage.setItem(SAVE_KEY,JSON.stringify({
-   version:1,state:cleanState(state),history:history.slice(-100),
+   version:1,state:cleanState(state),history:history.slice(-100),developerGame,
    wasStarted:started,savedAt:Date.now()
   }))
  }catch(e){console.warn('Save unavailable',e)}
@@ -140,6 +157,7 @@ function restoreGame(){
   let raw=localStorage.getItem(SAVE_KEY);if(!raw)return false;
   let saved=JSON.parse(raw);if(!validSave(saved.state))return false;
   state=saved.state;
+  developerGame=!!saved.developerGame;
   history=Array.isArray(saved.history)?saved.history.filter(validSave).slice(-100):[];
   selected=null;animating=false;hintRun=null;pointer=null;
   started=false;stopClock();
@@ -153,7 +171,7 @@ function hasProgress(){
  return !!state&&(state.moves>0||state.completed>0||state.stock.length<50||state.elapsed>0)
 }
 function makeCard(rank,faceUp=true){return {rank,faceUp}}
-function devNearWin(){
+function devNearWin(){developerGame=true;
  cancelHint();stopClock();started=false;history=[];selected=null;animating=false;
  state={cols:Array.from({length:10},()=>[]),stock:[],moves:24,completed:7,elapsed:95};
  // Final suit is intentionally one legal move from completion: Q→A sits on Q, K is exposed.
@@ -162,7 +180,7 @@ function devNearWin(){
  status.textContent='Developer: Near Win loaded. Move Q→A onto K.';
  render();saveGame()
 }
-function devCompletionTest(){
+function devCompletionTest(){developerGame=true;
  cancelHint();stopClock();started=false;history=[];selected=null;animating=false;
  state={cols:Array.from({length:10},()=>[]),stock:[],moves:10,completed:0,elapsed:40};
  state.cols[0]=[makeCard('K')];
@@ -171,7 +189,7 @@ function devCompletionTest(){
  status.textContent='Developer: complete the K→A suit to test its flow animation.';
  render();saveGame()
 }
-async function devInstantWin(){
+async function devInstantWin(){developerGame=true;
  cancelHint();stopClock();started=false;history=[];selected=null;animating=false;
  state={cols:Array.from({length:10},()=>[]),stock:[],moves:42,completed:8,elapsed:123};
  render();saveGame();status.textContent='Developer: triggering win celebration…';
@@ -199,7 +217,7 @@ function showDeveloper(){
  o.innerHTML=`<div class="dev-panel"><h2>Developer Mode</h2><p>Testing tools only. Long-press the version number anytime to reopen this panel.</p>
  <div class="dev-grid">
  <button data-dev="near">Near Win</button><button data-dev="win">Instant Win</button>
- <button data-dev="complete">Test Completed Suit</button><button data-dev="collection">Open Collection</button>
+ <button data-dev="complete">Test Completed Suit</button><button data-dev="collection">Open Collection</button><button data-dev="stats">Open Stats</button>
  <button data-preview="spider">Test Spider Shuffle</button><button data-preview="wave">Test Royal Wave</button>
  <button data-preview="tower">Test Card Tower</button><button data-dev="reset">Reset Celebrations</button>
  <button data-dev="unlock">Unlock All</button>
@@ -210,6 +228,7 @@ function showDeveloper(){
  o.querySelector('[data-dev="win"]').onclick=()=>{o.remove();devInstantWin()};
  o.querySelector('[data-dev="complete"]').onclick=()=>{o.remove();devCompletionTest()};
  o.querySelector('[data-dev="collection"]').onclick=()=>{o.remove();showCollection()};
+ o.querySelector('[data-dev="stats"]').onclick=()=>{o.remove();showStats()};
  o.querySelectorAll('[data-preview]').forEach(b=>b.onclick=()=>devPreviewCelebration(b.dataset.preview));
  o.querySelector('[data-dev="reset"]').onclick=devResetCelebrations;
  o.querySelector('[data-dev="unlock"]').onclick=devUnlockAll
@@ -219,7 +238,7 @@ function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60)
 function startClock(){if(started)return;started=true;startAt=Date.now()-state.elapsed*1000;timerId=setInterval(()=>{state.elapsed=Math.floor((Date.now()-startAt)/1000);stats();saveGame()},1000)}
 function stopClock(){clearInterval(timerId);timerId=null} function stats(){movesEl.textContent=state.moves;scoreEl.textContent=Math.max(0,500-state.moves+state.completed*100);timerEl.textContent=fmt(state.elapsed)}
 function cancelHint(msg=''){if(!hintRun)return;hintRun.cancelled=true;hintRun=null;hintCounter.hidden=true;document.querySelectorAll('.motion-stack').forEach(x=>x.remove());animating=false;if(msg)status.textContent=msg}
-function newGame(){cancelHint();stopClock();started=false;history=[];selected=null;let d=deck();shuffle(d);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,elapsed:0};status.textContent='Tap a movable card or stack. Smart Tap will make the best legal move.';render()}
+function newGame(){cancelHint();stopClock();started=false;history=[];selected=null;developerGame=false;let d=deck();shuffle(d);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,elapsed:0};status.textContent='Tap a movable card or stack. Smart Tap will make the best legal move.';render()}
 function movable(c,i){let a=state.cols[c];if(i<0||!a[i]?.faceUp)return false;for(let x=i;x<a.length-1;x++)if(!a[x+1].faceUp||val(a[x].rank)!==val(a[x+1].rank)+1)return false;return true}
 function legal(f,i,t){if(f===t||!movable(f,i))return false;let m=state.cols[f][i],d=state.cols[t];return !d.length||val(d[d.length-1].rank)===val(m.rank)+1}
 function flip(c){let a=state.cols[c];if(a.length&&!a[a.length-1].faceUp){a[a.length-1].faceUp=true;a[a.length-1]._justFlipped=true}}
@@ -305,7 +324,7 @@ async function post(){
    await sleep(180);
   }
  }
- if(state.completed===8&&state.stock.length===0&&state.cols.every(c=>c.length===0)){stopClock();toast('You won!');status.textContent='Game complete!';render();celebrateWin();won=true}
+ if(state.completed===8&&state.stock.length===0&&state.cols.every(c=>c.length===0)){stopClock();toast('You won!');status.textContent='Game complete!';recordFinishedGame(true);render();celebrateWin();won=true}
  return won
 }
 function spacingFor(a){
@@ -468,13 +487,13 @@ history.pop();state=previous;animating=false;status.textContent='Last action und
 }
 undoBtn.onclick=undo;hintBtn.onclick=runHints;stockControl.onclick=deal;
 const askNew=()=>{
- cancelHint();
- if(!hasProgress()||confirm('Start a new game? Your current game will be replaced.'))newGame()
+ cancelHint();if(!hasProgress()){newGame();return}
+ if(confirm('Start a new game? Your current game will be replaced.')){if(!developerGame)recordFinishedGame(false);newGame()}
 };
 newBtn.onclick=askNew;newBottom.onclick=askNew;
 
 let devPressTimer=null;
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.5.2');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.6');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
@@ -483,6 +502,7 @@ if(versionEl){
  versionEl.addEventListener('pointercancel',cancelDev);
  versionEl.addEventListener('pointerleave',cancelDev);
 }
+$('statsLink').onclick=showStats;
 window.addEventListener('pagehide',saveGame);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveGame()});
 try{
