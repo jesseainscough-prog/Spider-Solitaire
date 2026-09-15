@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#06462e">
+<title>Spider Solitaire 1.0E</title>
+<style>
+:root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
+body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
+.game-shell{position:relative;max-width:820px;margin:auto;min-height:690px;overflow:hidden;border-radius:18px;border:1px solid rgba(232,200,121,.72);background:linear-gradient(160deg,var(--felt1),var(--felt2) 55%,var(--felt3));box-shadow:0 16px 40px #0004}
+.topbar{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;padding:10px 12px;background:#00271af2;border-bottom:1px solid #e8c87966}
+.brand-main,.brand-sub{color:var(--gold);font-family:Georgia,serif;letter-spacing:.08em}.brand-main{font-weight:700;font-size:20px}.brand-sub{font-size:11px;letter-spacing:.2em;margin-top:4px}
+.stats{display:flex;gap:14px}.stat{text-align:center;min-width:46px}.stat span{display:block;font-size:11px;opacity:.7}.stat strong{font-size:17px}
+.icon-btn{width:40px;height:40px;border-radius:10px;background:#ffffff14;color:#fff;border:1px solid #ffffff26;font-size:20px}
+.subbar{display:flex;justify-content:space-between;padding:6px 12px;font-size:11px;opacity:.72;background:#00271a8c}
+.board{position:relative;min-height:540px;padding:12px 5px 104px;overflow:hidden;touch-action:none}
+.columns{position:relative;z-index:2;display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:3px}
+.column{position:relative;height:430px;min-width:0;border-radius:6px}.column.drop-target{outline:2px solid var(--gold);outline-offset:1px;background:#e8c87914}
+.empty-slot{position:absolute;top:0;left:0;width:100%;aspect-ratio:.69;border-radius:5px;border:1px dashed #ffffff33}
+.card{position:absolute;left:0;width:100%;aspect-ratio:.69;border-radius:5px;overflow:hidden;box-shadow:0 1px 2px #0006;user-select:none;-webkit-user-select:none;touch-action:none}
+.card.back{background:repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px);border:1.5px solid #e3edf7;outline:1px solid #174a7d;outline-offset:-4px}
+.card.face,.motion-card{background:var(--cream);color:#111;border:1px solid #d5d2c9;padding:3px 2px;font-family:Georgia,serif;font-weight:700}
+.rank{font-size:clamp(10px,3vw,22px);line-height:.95}.suit{font-size:clamp(8px,2.5vw,17px);line-height:1}
+.card.selected{outline:3px solid var(--gold);outline-offset:-2px}
+.watermark{position:absolute;left:0;right:0;top:180px;text-align:center;font-size:145px;color:#000;opacity:.05;pointer-events:none;z-index:1}
+.stock-wrap{position:absolute;right:13px;bottom:104px;z-index:3;text-align:center;font-size:11px}.stock{width:49px;height:59px;position:relative;margin:0 auto 4px}
+.stock-card{position:absolute;width:39px;height:55px;border-radius:4px;background:repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px);border:1px solid #e3edf7}
+.completed{position:absolute;left:10px;bottom:105px;display:flex;gap:3px;z-index:3}.complete-card{width:24px;height:34px;border-radius:3px;background:var(--cream);color:#111;border:1px solid #ddd;text-align:center;font:700 14px/32px Georgia,serif}
+.toolbar{position:absolute;left:0;right:0;bottom:0;display:grid;grid-template-columns:1fr 1fr 1.15fr;gap:8px;padding:10px;background:#002619f5;border-top:1px solid #e8c87966;z-index:5}
+.toolbar-btn{min-height:44px;border-radius:12px;font-weight:700;color:#fff;background:#ffffff14;border:1px solid #ffffff24}.toolbar-btn:disabled{color:#ffffff59}.deal-btn{background:linear-gradient(#efd58e,#d4ac58);color:#17241d;border-color:#efd58e}.deal-btn:disabled{opacity:.5}
+.status{max-width:820px;margin:7px auto 0;font-size:13px;color:#bfc8c3;min-height:20px}
+.hint-counter{position:absolute;left:50%;bottom:110px;transform:translateX(-50%);z-index:1200;background:#001f16e8;border:1px solid var(--gold);color:var(--gold);border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700}
+.motion-stack{position:absolute;z-index:1100;pointer-events:none;filter:drop-shadow(0 7px 6px #0006);will-change:transform}
+.motion-card{position:absolute;left:0;width:100%;aspect-ratio:.69;border-radius:5px}
+.motion-stack.hinting{filter:drop-shadow(0 0 7px rgba(232,200,121,.9))}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(15px);background:#000d;color:#fff;padding:9px 13px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.18s;z-index:5000}.toast.show{opacity:1;transform:translateX(-50%)}
+@media(max-width:430px){body{padding:4px}.game-shell{border-radius:14px;min-height:650px}.topbar{padding:9px 7px;gap:7px}.brand-main{font-size:17px}.stats{gap:7px}.stat{min-width:38px}.stat strong{font-size:15px}.icon-btn{width:36px;height:36px}.subbar{padding:5px 7px}.board{padding-left:2px;padding-right:2px}.columns{gap:2px}.column{height:440px}.card.face,.motion-card{padding:2px 1px}}
+</style>
+</head>
+<body>
+<main class="game-shell">
+<header class="topbar">
+  <div><div class="brand-main">♠ SPIDER</div><div class="brand-sub">SOLITAIRE</div></div>
+  <div class="stats">
+    <div class="stat"><span>Score</span><strong id="score">500</strong></div>
+    <div class="stat"><span>Moves</span><strong id="moves">0</strong></div>
+    <div class="stat"><span>Time</span><strong id="timer">00:00</strong></div>
+  </div>
+  <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
+</header>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0E</span></div>
+<section id="board" class="board">
+  <div class="watermark">♠</div>
+  <div id="columns" class="columns"></div>
+  <div id="completed" class="completed"></div>
+  <div class="stock-wrap"><div id="stock" class="stock"></div><div id="stockLabel">5 Deals Left</div></div>
+  <div id="hintCounter" class="hint-counter" hidden>Hint 1 of 5</div>
+</section>
+<footer class="toolbar">
+  <button id="undo" class="toolbar-btn" disabled>↶ Undo</button>
+  <button id="hint" class="toolbar-btn">💡 Hint</button>
+  <button id="deal" class="toolbar-btn deal-btn">▣ Deal</button>
+</footer>
+</main>
+<div id="status" class="status" aria-live="polite">Tap a movable card or stack. Smart Tap will make the best legal move.</div>
+<div id="toast" class="toast"></div>
+<script>
+(() => {
+const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockLabel=$('stockLabel'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), dealBtn=$('deal'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
+const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
+let state,history=[],selected=null,started=false,startAt=0,timerId=null,pointer=null,hintRun=null,animating=false;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function toast(t){toastEl.textContent=t;toastEl.classList.add('show');clearTimeout(toastEl._t);toastEl._t=setTimeout(()=>toastEl.classList.remove('show'),1200)}
+function deck(){let d=[],id=0;for(let s=0;s<8;s++)for(const rank of ranks)d.push({id:id++,rank,faceUp:false});return d}
+function shuffle(a){for(let i=a.length-1;i;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
+function copy(){return JSON.parse(JSON.stringify(state))} function remember(){history.push(copy());if(history.length>100)history.shift()}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function startClock(){if(started)return;started=true;startAt=Date.now()-state.elapsed*1000;timerId=setInterval(()=>{state.elapsed=Math.floor((Date.now()-startAt)/1000);stats()},1000)}
+function stopClock(){clearInterval(timerId);timerId=null} function stats(){movesEl.textContent=state.moves;scoreEl.textContent=Math.max(0,500-state.moves+state.completed*100);timerEl.textContent=fmt(state.elapsed)}
+function cancelHint(msg=''){if(!hintRun)return;hintRun.cancelled=true;hintRun=null;hintCounter.hidden=true;document.querySelectorAll('.motion-stack').forEach(x=>x.remove());animating=false;if(msg)status.textContent=msg}
+function newGame(){cancelHint();stopClock();started=false;history=[];selected=null;let d=deck();shuffle(d);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,elapsed:0};status.textContent='Tap a movable card or stack. Smart Tap will make the best legal move.';render()}
+function movable(c,i){let a=state.cols[c];if(i<0||!a[i]?.faceUp)return false;for(let x=i;x<a.length-1;x++)if(!a[x+1].faceUp||val(a[x].rank)!==val(a[x+1].rank)+1)return false;return true}
+function legal(f,i,t){if(f===t||!movable(f,i))return false;let m=state.cols[f][i],d=state.cols[t];return !d.length||val(d[d.length-1].rank)===val(m.rank)+1}
+function flip(c){let a=state.cols[c];if(a.length&&!a[a.length-1].faceUp)a[a.length-1].faceUp=true}
+function complete(c){let a=state.cols[c];if(a.length<13)return false;let s=a.length-13;for(let i=0;i<13;i++)if(!a[s+i].faceUp||val(a[s+i].rank)!==13-i)return false;a.splice(s,13);state.completed++;flip(c);return true}
+function post(){for(let c=0;c<10;c++)while(complete(c)){};if(state.completed===8){stopClock();toast('You win!');status.textContent=`You won in ${state.moves} moves and ${fmt(state.elapsed)}!`}render()}
+function offsets(a){let y=0,o=[];for(const c of a){o.push(y);y+=c.faceUp?27:11}return o}
+function scoreMove(f,i,t){let s=state.cols[f],d=state.cols[t],score=0;if(i>0&&!s[i-1].faceUp)score+=1000;if(d.length)score+=425;else score-=150;score+=(s.length-i)*4;return score}
+function allMoves(){let a=[];for(let f=0;f<10;f++)for(let i=0;i<state.cols[f].length;i++)if(movable(f,i))for(let t=0;t<10;t++)if(legal(f,i,t))a.push({from:f,index:i,to:t,score:scoreMove(f,i,t)});a.sort((x,y)=>y.score-x.score);let seen=new Set();return a.filter(m=>{let k=`${m.from}-${m.index}-${m.to}`;if(seen.has(k))return false;seen.add(k);return true})}
+function best(f,i){return allMoves().filter(m=>m.from===f&&m.index===i)[0]||null}
+function cardEl(c,i){return columnsEl.querySelector(`.card[data-col="${c}"][data-index="${i}"]`)}
+function colEl(c){return columnsEl.querySelector(`.column[data-col="${c}"]`)}
+function destinationPoint(to){let col=colEl(to),r=col.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[to],ys=offsets(cards);let y=cards.length?ys[cards.length-1]+27:0;return{x:r.left-br.left,y:r.top-br.top+y}}
+function motionStack(from,index,hint=false){let el=cardEl(from,index),cr=el.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[from].slice(index),h=document.createElement('div');h.className='motion-stack'+(hint?' hinting':'');h.style.width=cr.width+'px';h.style.height=(cr.height+(cards.length-1)*27)+'px';h.style.left=(cr.left-br.left)+'px';h.style.top=(cr.top-br.top)+'px';cards.forEach((c,n)=>{let d=document.createElement('div');d.className='motion-card';d.style.top=(n*27)+'px';d.innerHTML=`<div class="rank">${c.rank}</div><div class="suit">♠</div>`;h.appendChild(d)});board.appendChild(h);return h}
+async function animatePreview(m,run,num,total){if(run.cancelled)return;render();let h=motionStack(m.from,m.index,true),start=cardEl(m.from,m.index).getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to);let sx=start.left-br.left,sy=start.top-br.top,dx=dest.x-sx,dy=dest.y-sy;hintCounter.textContent=`Hint ${num} of ${total}`;hintCounter.hidden=false;await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:550,easing:'ease-in-out',fill:'forwards'}).finished.catch(()=>{});if(run.cancelled){h.remove();return}await sleep(280);await h.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'translate(0,0)'}],{duration:450,easing:'ease-in-out',fill:'forwards'}).finished.catch(()=>{});h.remove();await sleep(180)}
+async function runHints(){if(hintRun){cancelHint('Hint tour stopped.');return}let list=allMoves().slice(0,5);if(!list.length){status.textContent=state.stock.length>=10?'No legal tableau move found. Try Deal.':'No legal move found.';toast('Try Deal');return}let run={cancelled:false};hintRun=run;animating=true;status.textContent=`Showing ${list.length} possible move${list.length===1?'':'s'}…`;for(let n=0;n<list.length;n++){if(run.cancelled)break;await animatePreview(list[n],run,n+1,list.length)}if(!run.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent='Hint tour complete. Make any move you like.'}}
+async function animateReal(m,commit){animating=true;render();let h=motionStack(m.from,m.index),src=cardEl(m.from,m.index),sr=src.getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to),dx=dest.x-(sr.left-br.left),dy=dest.y-(sr.top-br.top);state.cols[m.from].slice(m.index).forEach((_,n)=>{let e=cardEl(m.from,m.index+n);if(e)e.style.visibility='hidden'});await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:300,easing:'cubic-bezier(.2,.75,.25,1)',fill:'forwards'}).finished.catch(()=>{});commit();h.remove();animating=false}
+async function perform(f,i,t,msg='Moved.'){if(animating||!legal(f,i,t))return false;cancelHint();let m={from:f,index:i,to:t};remember();startClock();await animateReal(m,()=>{state.cols[t].push(...state.cols[f].splice(i));flip(f);state.moves++;selected=null;status.textContent=msg;post()});return true}
+function smart(c,i){if(animating)return;cancelHint();if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';return}let m=best(c,i);if(m)perform(c,i,m.to,'Smart move completed.');else{selected={col:c,index:i};status.textContent='No automatic move found. Tap a destination or drag.';render()}}
+function tapDest(c){if(selected)perform(selected.col,selected.index,c,'Manual move completed.')}
+function deal(){if(animating)return;cancelHint();if(state.stock.length<10)return;if(state.cols.some(c=>!c.length)){toast('Fill empty columns first');return}remember();startClock();for(let c=0;c<10;c++){let x=state.stock.pop();x.faceUp=true;state.cols[c].push(x)}state.moves++;selected=null;status.textContent='Dealt one new card to every column.';post()}
+function render(){columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back');e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.innerHTML=`<div class="rank">${card.rank}</div><div class="suit">♠</div>`;e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>pointerUp(ev,ci,i))}col.appendChild(e)});col.addEventListener('pointerup',e=>{if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});let deals=Math.floor(state.stock.length/10);stockEl.innerHTML='';for(let i=0;i<deals;i++){let s=document.createElement('div');s.className='stock-card';s.style.left=i*2+'px';s.style.top=-i+'px';stockEl.appendChild(s)}stockLabel.textContent=`${deals} Deal${deals===1?'':'s'} Left`;dealBtn.disabled=!deals;completedEl.innerHTML='';for(let i=0;i<state.completed;i++){let c=document.createElement('div');c.className='complete-card';c.textContent='♠';completedEl.appendChild(c)}undoBtn.disabled=!history.length;stats()}
+function pointerDown(e,c,i,el){if(animating)return;cancelHint();if(!movable(c,i))return;pointer={id:e.pointerId,c,i,x:e.clientX,y:e.clientY,drag:false,el,h:null,dx:0,dy:0};el.setPointerCapture?.(e.pointerId);document.addEventListener('pointermove',pointerMove,{passive:false})}
+function pointerMove(e){if(!pointer||e.pointerId!==pointer.id)return;let dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.drag&&Math.hypot(dx,dy)<12)return;if(!pointer.drag){pointer.drag=true;pointer.h=motionStack(pointer.c,pointer.i);let r=pointer.el.getBoundingClientRect();pointer.dx=e.clientX-r.left;pointer.dy=e.clientY-r.top}e.preventDefault();let br=board.getBoundingClientRect();pointer.h.style.left=(e.clientX-br.left-pointer.dx)+'px';pointer.h.style.top=(e.clientY-br.top-pointer.dy)+'px';document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column');if(t&&legal(pointer.c,pointer.i,+t.dataset.col))t.classList.add('drop-target')}
+function pointerUp(e,c,i){document.removeEventListener('pointermove',pointerMove);if(!pointer)return;document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let p=pointer;pointer=null;if(p.drag){let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column'),to=t?+t.dataset.col:null;p.h?.remove();if(to!==null&&legal(p.c,p.i,to)){perform(p.c,p.i,to,'Dragged move completed.');return}render();return}smart(c,i)}
+async function undo(){if(animating||!history.length)return;cancelHint();let previous=history[history.length-1],current=copy();let candidate=null;outer:for(let pc=0;pc<10;pc++)for(let cc=0;cc<10;cc++){if(pc===cc)continue;let p=previous.cols[pc],c=current.cols[cc];if(p.length>state.cols[pc].length&&c.length>previous.cols[cc].length){candidate={};break outer}}history.pop();state=previous;selected=null;status.textContent='Last action undone.';render()}
+undoBtn.onclick=undo;hintBtn.onclick=runHints;dealBtn.onclick=deal;newBtn.onclick=()=>{cancelHint();if(confirm('Start a new game?'))newGame()};newGame();
+})();
+</script>
+</body>
+</html>
