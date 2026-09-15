@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.2</title>
+<title>Spider Solitaire 1.0J.2.1</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
@@ -37,7 +37,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .motion-stack.hinting{filter:drop-shadow(0 0 7px rgba(232,200,121,.9))}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(15px);background:#000d;color:#fff;padding:9px 13px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.18s;z-index:5000}.toast.show{opacity:1;transform:translateX(-50%)}
 @media(max-width:430px){body{padding:0}.game-shell{border-radius:0;min-height:100dvh}.topbar{padding:9px 7px;gap:7px}.brand-main{font-size:17px}.stats{gap:7px}.stat{min-width:38px}.stat strong{font-size:15px}.icon-btn{width:36px;height:36px}.subbar{padding:5px 7px}.board{padding-left:2px;padding-right:2px}.columns{gap:2px}.column{height:440px}.card.face,.motion-card{padding:2px 1px}}
-.court-img{position:absolute;left:18%;top:8%;width:80%;height:88%;object-fit:cover;object-position:center;border-radius:3px;pointer-events:none}.complete-fly{position:absolute;z-index:1900;pointer-events:none;filter:drop-shadow(0 3px 4px #0008)}.complete-card{animation:completePop .24s ease-out}@keyframes completePop{0%{transform:scale(.55);opacity:.25}100%{transform:scale(1);opacity:1}}
+.court-portrait{position:absolute;left:18%;top:8%;width:78%;height:88%;display:block;pointer-events:none}.complete-fly{position:absolute;z-index:1900;pointer-events:none;filter:drop-shadow(0 3px 4px #0008)}.complete-card{animation:completePop .24s ease-out}@keyframes completePop{0%{transform:scale(.55);opacity:.25}100%{transform:scale(1);opacity:1}}
 .win-overlay{position:absolute;inset:0;z-index:3000;background:#001d14cc;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 .win-panel{width:min(82%,360px);padding:24px 18px;border:1px solid #e8c879;border-radius:18px;background:#063f2e;text-align:center;box-shadow:0 20px 50px #0008}
 .win-panel h2{margin:0 0 8px;color:#efd58e;font:700 30px Georgia,serif}.win-panel p{margin:7px 0;color:#fff}.win-panel button{margin-top:14px;padding:11px 24px;border-radius:12px;border:1px solid #efd58e;background:#e5bd65;color:#173326;font-weight:800}
@@ -55,7 +55,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.2</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.2.1</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -79,14 +79,25 @@ let state,history=[],selected=null,started=false,startAt=0,timerId=null,pointer=
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function toast(t){toastEl.textContent=t;toastEl.classList.add('show');clearTimeout(toastEl._t);toastEl._t=setTimeout(()=>toastEl.classList.remove('show'),1200)}
 
-const courtArt={
- J:'https://commons.wikimedia.org/wiki/Special:FilePath/Jack_of_spades.svg',
- Q:'https://commons.wikimedia.org/wiki/Special:FilePath/Queen_of_spades.svg',
- K:'https://commons.wikimedia.org/wiki/Special:FilePath/King_of_spades.svg'
-};
 function faceHTML(card){
- if(!courtArt[card.rank])return `<div class="rank">${card.rank}</div><div class="suit">♠</div>`;
- return `<div class="rank">${card.rank}</div><img class="court-img" src="${courtArt[card.rank]}" alt="" draggable="false">`;
+ if(!['J','Q','K'].includes(card.rank))return `<div class="rank">${card.rank}</div><div class="suit">♠</div>`;
+ const cfg={
+  J:{c:'#315d9b',c2:'#b3262d',hat:'M12 18 L20 7 L28 18 L36 7 L44 18 L40 25 L16 25 Z'},
+  Q:{c:'#b3262d',c2:'#315d9b',hat:'M13 21 L16 8 L24 16 L30 6 L36 16 L43 8 L46 21 Z'},
+  K:{c:'#b3262d',c2:'#315d9b',hat:'M12 22 L14 7 L23 15 L30 5 L37 15 L46 7 L48 22 Z'}
+ }[card.rank];
+ return `<div class="rank">${card.rank}</div>
+ <svg class="court-portrait" viewBox="0 0 60 86" aria-hidden="true">
+  <path d="${cfg.hat}" fill="#e1b642" stroke="#222" stroke-width="1.5"/>
+  <circle cx="30" cy="32" r="11" fill="#f0c69b" stroke="#222" stroke-width="1.4"/>
+  <path d="M21 29 Q30 24 39 29" fill="none" stroke="#6f3f24" stroke-width="2"/>
+  <circle cx="26" cy="32" r="1.2"/><circle cx="34" cy="32" r="1.2"/>
+  <path d="M26 38 Q30 41 34 38" fill="none" stroke="#8a3434" stroke-width="1.4"/>
+  <path d="M12 78 L18 47 Q30 40 42 47 L48 78 Z" fill="${cfg.c}" stroke="#222" stroke-width="1.5"/>
+  <path d="M18 48 L30 64 L42 48 L38 78 L22 78 Z" fill="${cfg.c2}" stroke="#e1b642" stroke-width="2"/>
+  <path d="M30 52 l4 6 -4 6 -4-6z" fill="#e1b642"/>
+  <text x="30" y="75" text-anchor="middle" font-size="15" font-family="Georgia,serif" fill="white">♠</text>
+ </svg>`;
 }
 function deck(){let d=[],id=0;for(let s=0;s<8;s++)for(const rank of ranks)d.push({id:id++,rank,faceUp:false});return d}
 function shuffle(a){for(let i=a.length-1;i;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
@@ -143,7 +154,11 @@ function moveCompletesSuit(f,i,to){
 }
 function breaksBuiltRun(f,i){
  let s=state.cols[f];
- return i>0&&s[i-1]?.faceUp&&val(s[i-1].rank)===val(s[i].rank)+1;
+ if(i<=0||!s[i-1]?.faceUp)return false;
+ if(val(s[i-1].rank)!==val(s[i].rank)+1)return false;
+ // If removing the tail exposes a hidden card, that is strategically constructive.
+ if(i===1&&!s[0].faceUp)return false;
+ return true;
 }
 function scoreMove(f,i,t){
  let s=state.cols[f],d=state.cols[t],moving=s.slice(i),n=moving.length,score=0;
@@ -167,20 +182,27 @@ function scoreMove(f,i,t){
  if(!exposesHidden&&d.length&&sourceRun===n&&n>=3)score-=n*45;
  return score;
 }
-function allMoves(){
+function legalMoves(){
  let a=[];
  for(let f=0;f<10;f++)for(let i=0;i<state.cols[f].length;i++)if(movable(f,i))
-  for(let to=0;to<10;to++)if(legal(f,i,to)){
-   let destructive=breaksBuiltRun(f,i)&&!moveCompletesSuit(f,i,to);
-   a.push({from:f,index:i,to,score:scoreMove(f,i,to),destructive});
-  }
+  for(let to=0;to<10;to++)if(legal(f,i,to))
+   a.push({from:f,index:i,to,score:scoreMove(f,i,to),
+           destructive:breaksBuiltRun(f,i)&&!moveCompletesSuit(f,i,to)});
+ return a;
+}
+function allMoves(){
+ let a=legalMoves();
  let constructive=a.filter(m=>!m.destructive);
  if(constructive.length)a=constructive;
  a.sort((x,y)=>y.score-x.score);
  let seen=new Set();
  return a.filter(m=>{let k=`${m.from}-${m.index}-${m.to}`;if(seen.has(k))return false;seen.add(k);return true});
 }
-function best(f,i){return allMoves().filter(m=>m.from===f&&m.index===i)[0]||null}
+function best(f,i){
+ let a=legalMoves().filter(m=>m.from===f&&m.index===i);
+ a.sort((x,y)=>y.score-x.score);
+ return a[0]||null;
+}
 function cardEl(c,i){return columnsEl.querySelector(`.card[data-col="${c}"][data-index="${i}"]`)}
 function colEl(c){return columnsEl.querySelector(`.column[data-col="${c}"]`)}
 function destinationPoint(to){let col=colEl(to),r=col.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[to],ys=offsets(cards);let y=cards.length?ys[cards.length-1]+27:0;return{x:r.left-br.left,y:r.top-br.top+y}}
