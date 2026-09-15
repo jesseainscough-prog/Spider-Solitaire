@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.4</title>
+<title>Spider Solitaire 1.0J.5.1</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
@@ -46,6 +46,17 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .win-panel{width:min(82%,360px);padding:24px 18px;border:1px solid #e8c879;border-radius:18px;background:#063f2e;text-align:center;box-shadow:0 20px 50px #0008}
 .win-panel h2{margin:0 0 8px;color:#efd58e;font:700 30px Georgia,serif}.win-panel p{margin:7px 0;color:#fff}.win-panel button{margin-top:14px;padding:11px 24px;border-radius:12px;border:1px solid #efd58e;background:#e5bd65;color:#173326;font-weight:800}
 .win-fly{position:absolute;z-index:2800;width:38px;height:54px;border-radius:4px;background:#fff;color:#111;border:1px solid #ddd;font:700 18px Georgia,serif;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.celebration-stage{position:absolute;inset:0;z-index:2850;pointer-events:none;overflow:hidden}.party-card{position:absolute;width:38px;height:54px;border-radius:4px;background:linear-gradient(145deg,#fff,#f3efe4);color:#111;border:1px solid #ddd;box-shadow:0 3px 8px #0008;font:700 15px Georgia,serif;padding:3px;transform-origin:center}
+.unlock-badge{margin:12px auto 2px;padding:7px 10px;border:1px solid #e8c879;border-radius:999px;color:#efd58e;background:#001f16;font-weight:800;font-size:12px;width:max-content}.collection-btn{background:#ffffff12!important;color:#efd58e!important;margin-left:6px!important}
+.collection-overlay{position:absolute;inset:0;z-index:3400;background:#001d14f2;padding:20px 14px;overflow:auto}.collection-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.collection-head h2{margin:0;color:#efd58e;font:700 25px Georgia,serif}.collection-close{border:1px solid #ffffff44;background:#ffffff12;color:#fff;border-radius:10px;padding:8px 12px}
+.collection-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.dev-overlay{position:absolute;inset:0;z-index:3900;background:#001d14f5;display:flex;align-items:center;justify-content:center;padding:18px}
+.dev-panel{width:min(92%,390px);background:#073b2d;border:1px solid #e8c87966;border-radius:18px;padding:18px;box-shadow:0 18px 50px #0009;color:#fff}
+.dev-panel h2{margin:0 0 4px;color:#efd58e;font:700 24px Georgia,serif}.dev-panel p{margin:0 0 14px;opacity:.75;font-size:12px;line-height:1.4}
+.dev-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.dev-grid button,.dev-close{border:1px solid #ffffff33;background:#ffffff10;color:#fff;border-radius:11px;padding:12px 8px;font-weight:800}
+.dev-grid button:active,.dev-close:active{transform:scale(.97)}.dev-close{width:100%;margin-top:12px;color:#efd58e}
+.collection-tile{min-height:118px;border:1px solid #ffffff25;border-radius:12px;background:#ffffff0c;padding:8px;text-align:center;color:#fff}.collection-tile.locked{opacity:.38;filter:grayscale(1)}.collection-icon{height:70px;display:flex;align-items:center;justify-content:center;font-size:36px}.collection-name{font-weight:800;font-size:12px;color:#efd58e}.collection-state{font-size:10px;opacity:.7;margin-top:3px}
+
 </style>
 </head>
 <body>
@@ -59,7 +70,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.4</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.5.1</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -96,6 +107,13 @@ function faceHTML(card){
 function deck(){let d=[],id=0;for(let s=0;s<8;s++)for(const rank of ranks)d.push({id:id++,rank,faceUp:false});return d}
 function shuffle(a){for(let i=a.length-1;i;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
 const SAVE_KEY='spider-solitaire-j4-save';
+const COLLECTION_KEY='spider-solitaire-celebrations';
+const celebrations=[{id:'spider',name:'Spider Shuffle',icon:'🕷️'},{id:'wave',name:'Royal Wave',icon:'〰️'},{id:'tower',name:'Card Tower',icon:'♠️'}];
+function getCollection(){try{return JSON.parse(localStorage.getItem(COLLECTION_KEY)||'[]')}catch(e){return []}}
+function setCollection(a){try{localStorage.setItem(COLLECTION_KEY,JSON.stringify([...new Set(a)]))}catch(e){}}
+function unlockCelebration(id){let a=getCollection(),fresh=!a.includes(id);if(fresh){a.push(id);setCollection(a)}return fresh}
+function nextCelebration(){let a=getCollection(),locked=celebrations.filter(c=>!a.includes(c.id));return locked.length?locked[0]:celebrations[Math.floor(Math.random()*celebrations.length)]}
+
 function cleanState(s){
  let x=JSON.parse(JSON.stringify(s));
  delete x._pendingComplete;
@@ -134,6 +152,60 @@ function restoreGame(){
 function hasProgress(){
  return !!state&&(state.moves>0||state.completed>0||state.stock.length<50||state.elapsed>0)
 }
+function makeCard(rank,faceUp=true){return {rank,faceUp}}
+function devNearWin(){
+ cancelHint();stopClock();started=false;history=[];selected=null;animating=false;
+ state={cols:Array.from({length:10},()=>[]),stock:[],moves:24,completed:7,elapsed:95};
+ // Final suit is intentionally one legal move from completion: Q→A sits on Q, K is exposed.
+ state.cols[0]=[makeCard('K')];
+ state.cols[1]=['Q','J','10','9','8','7','6','5','4','3','2','A'].map(r=>makeCard(r));
+ // A few inert face-up cards make the test board look like a real late game.
+ state.cols[2]=[makeCard('5')]; state.cols[3]=[makeCard('8')]; state.cols[4]=[makeCard('10')];
+ status.textContent='Developer: Near Win loaded. Move Q→A onto K.';
+ render();saveGame()
+}
+function devCompletionTest(){
+ cancelHint();stopClock();started=false;history=[];selected=null;animating=false;
+ state={cols:Array.from({length:10},()=>[]),stock:[],moves:10,completed:0,elapsed:40};
+ state.cols[0]=[makeCard('K')];
+ state.cols[1]=['Q','J','10','9','8','7','6','5','4','3','2','A'].map(r=>makeCard(r));
+ state.cols[2]=[makeCard('7')];state.cols[3]=[makeCard('9')];
+ status.textContent='Developer: complete the K→A suit to test its flow animation.';
+ render();saveGame()
+}
+async function devInstantWin(){
+ cancelHint();stopClock();started=false;history=[];selected=null;animating=false;
+ state={cols:Array.from({length:10},()=>[]),stock:[],moves:42,completed:8,elapsed:123};
+ render();saveGame();status.textContent='Developer: triggering win celebration…';
+ await sleep(120);celebrateWin()
+}
+function devResetCelebrations(){
+ setCollection([]);status.textContent='Developer: celebration collection reset.';
+ document.querySelector('.dev-overlay')?.remove()
+}
+function devUnlockAll(){
+ setCollection(celebrations.map(c=>c.id));status.textContent='Developer: all celebrations unlocked.';
+ document.querySelector('.dev-overlay')?.remove()
+}
+function showDeveloper(){
+ document.querySelector('.dev-overlay')?.remove();
+ let o=document.createElement('div');o.className='dev-overlay';
+ o.innerHTML=`<div class="dev-panel"><h2>Developer Mode</h2><p>Testing tools only. Long-press the version number anytime to reopen this panel.</p>
+ <div class="dev-grid">
+ <button data-dev="near">Near Win</button><button data-dev="win">Instant Win</button>
+ <button data-dev="complete">Test Completed Suit</button><button data-dev="collection">Open Collection</button>
+ <button data-dev="reset">Reset Celebrations</button><button data-dev="unlock">Unlock All</button>
+ </div><button class="dev-close">Close</button></div>`;
+ board.appendChild(o);
+ o.querySelector('.dev-close').onclick=()=>o.remove();
+ o.querySelector('[data-dev="near"]').onclick=()=>{o.remove();devNearWin()};
+ o.querySelector('[data-dev="win"]').onclick=()=>{o.remove();devInstantWin()};
+ o.querySelector('[data-dev="complete"]').onclick=()=>{o.remove();devCompletionTest()};
+ o.querySelector('[data-dev="collection"]').onclick=()=>{o.remove();showCollection()};
+ o.querySelector('[data-dev="reset"]').onclick=devResetCelebrations;
+ o.querySelector('[data-dev="unlock"]').onclick=devUnlockAll
+}
+
 function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
 function startClock(){if(started)return;started=true;startAt=Date.now()-state.elapsed*1000;timerId=setInterval(()=>{state.elapsed=Math.floor((Date.now()-startAt)/1000);stats();saveGame()},1000)}
 function stopClock(){clearInterval(timerId);timerId=null} function stats(){movesEl.textContent=state.moves;scoreEl.textContent=Math.max(0,500-state.moves+state.completed*100);timerEl.textContent=fmt(state.elapsed)}
@@ -150,20 +222,24 @@ function complete(c){
  return true
 }
 
-function celebrateWin(){
- const r=board.getBoundingClientRect(), ranks=['A','K','Q','J','10','9','8','7','6','5','4','3','2'];
- for(let i=0;i<30;i++){
-   let c=document.createElement('div');c.className='win-fly';c.textContent=ranks[i%ranks.length]+'♠';
-   c.style.left=(8+(i*31)%Math.max(40,r.width-48))+'px';c.style.top='58px';board.appendChild(c);
-   let dx=((i%5)-2)*55,dy=Math.max(300,r.height-120),rot=(i%2?1:-1)*(180+i*17);
-   c.animate([{transform:'translate(0,0) rotate(0)',opacity:1},{transform:`translate(${dx}px,${dy}px) rotate(${rot}deg)`,opacity:.15}],{duration:900+(i%6)*110,delay:i*38,easing:'cubic-bezier(.2,.65,.35,1)',fill:'forwards'});
-   setTimeout(()=>c.remove(),1800+i*40);
- }
- setTimeout(()=>{
-   let o=document.createElement('div');o.className='win-overlay';
-   o.innerHTML=`<div class="win-panel"><h2>You Won!</h2><p>Score <strong>${Math.max(0,500-state.moves+state.completed*100)}</strong></p><p>${state.moves} moves • ${fmt(state.elapsed)}</p><button>New Game</button></div>`;
-   o.querySelector('button').onclick=()=>{o.remove();newGame()};board.appendChild(o);
- },1250);
+function partyCard(stage,txt,x,y,rot=0,delay=0){
+ let e=document.createElement('div');e.className='party-card';e.textContent=txt;e.style.left=x+'px';e.style.top=y+'px';e.style.opacity='0';stage.appendChild(e);
+ e.animate([{opacity:0,transform:`translateY(80px) rotate(${rot-25}deg) scale(.5)`},{opacity:1,transform:`translateY(0) rotate(${rot}deg) scale(1)`}],{duration:650,delay,easing:'cubic-bezier(.2,.8,.2,1)',fill:'forwards'});return e
+}
+async function playCelebration(stage,id){
+ let w=board.clientWidth,h=board.clientHeight,cx=w/2,cy=h/2;
+ if(id==='wave'){for(let i=0;i<18;i++){let x=20+i*(w-70)/17,y=cy+Math.sin(i*.75)*55;partyCard(stage,ranks[i%13]+'♠',x,y,(i-8)*2,i*55)}await sleep(1850)}
+ else if(id==='tower'){let n=0;for(let row=0;row<5;row++)for(let col=0;col<5-row;col++){let x=cx-(4-row)*24+col*48-18,y=cy+120-row*48;partyCard(stage,ranks[(n++)%13]+'♠',x,y,(col%2?7:-7),n*65)}await sleep(1900)}
+ else{let pts=[[-18,-115],[18,-115],[-18,-58],[18,-58],[-55,-25],[55,-25],[-18,0],[18,0],[-48,48],[48,48],[-65,96],[65,96]];pts.forEach((q,i)=>partyCard(stage,ranks[(i+9)%13]+'♠',cx+q[0]-19,cy+q[1]-27,(i%2?8:-8),i*70));await sleep(1850);[...stage.children].forEach((e,i)=>e.animate([{transform:'translateY(0)'},{transform:`translateY(${i%2?12:-12}px) rotate(${i%2?18:-18}deg)`}],{duration:330,direction:'alternate',iterations:4,easing:'ease-in-out'}));await sleep(1250)}
+}
+function showCollection(){
+ document.querySelector('.collection-overlay')?.remove();let o=document.createElement('div');o.className='collection-overlay';let owned=getCollection();
+ o.innerHTML=`<div class="collection-head"><h2>Celebration Collection</h2><button class="collection-close">Close</button></div><div class="collection-grid">${celebrations.map(c=>`<div class="collection-tile ${owned.includes(c.id)?'':'locked'}"><div class="collection-icon">${owned.includes(c.id)?c.icon:'?'}</div><div class="collection-name">${owned.includes(c.id)?c.name:'Locked'}</div><div class="collection-state">${owned.includes(c.id)?'Collected':'Win to unlock'}</div></div>`).join('')}</div>`;
+ board.appendChild(o);o.querySelector('.collection-close').onclick=()=>o.remove()
+}
+async function celebrateWin(){
+ stopClock();started=false;saveGame();let chosen=nextCelebration(),fresh=unlockCelebration(chosen.id);let stage=document.createElement('div');stage.className='celebration-stage';board.appendChild(stage);await playCelebration(stage,chosen.id);stage.remove();
+ let o=document.createElement('div');o.className='win-overlay';o.innerHTML=`<div class="win-panel"><h2>You Won!</h2><p>Score <b>${Math.max(0,500-state.moves+state.completed*100)}</b> · Moves <b>${state.moves}</b> · Time <b>${fmt(state.elapsed)}</b></p>${fresh?`<div class="unlock-badge">★ New Celebration Unlocked</div>`:''}<p style="color:#efd58e;font-weight:800">${chosen.name}</p><button id="again">New Game</button><button id="collection" class="collection-btn">Collection</button></div>`;board.appendChild(o);o.querySelector('#again').onclick=()=>{o.remove();newGame()};o.querySelector('#collection').onclick=showCollection
 }
 
 async function animateCompletion(pc){
@@ -387,6 +463,17 @@ const askNew=()=>{
  if(!hasProgress()||confirm('Start a new game? Your current game will be replaced.'))newGame()
 };
 newBtn.onclick=askNew;newBottom.onclick=askNew;
+
+let devPressTimer=null;
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.5.1');
+if(versionEl){
+ const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
+ const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
+ versionEl.addEventListener('pointerdown',beginDev);
+ versionEl.addEventListener('pointerup',cancelDev);
+ versionEl.addEventListener('pointercancel',cancelDev);
+ versionEl.addEventListener('pointerleave',cancelDev);
+}
 window.addEventListener('pagehide',saveGame);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveGame()});
 try{
