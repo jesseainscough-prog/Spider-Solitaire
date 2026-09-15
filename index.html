@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.3.10</title>
+<title>Spider Solitaire 1.0J.4</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
@@ -59,7 +59,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.3.10</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.4</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -95,9 +95,47 @@ function faceHTML(card){
 }
 function deck(){let d=[],id=0;for(let s=0;s<8;s++)for(const rank of ranks)d.push({id:id++,rank,faceUp:false});return d}
 function shuffle(a){for(let i=a.length-1;i;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
-function copy(){return JSON.parse(JSON.stringify(state))} function remember(){history.push(copy());if(history.length>100)history.shift()}
+const SAVE_KEY='spider-solitaire-j4-save';
+function cleanState(s){
+ let x=JSON.parse(JSON.stringify(s));
+ delete x._pendingComplete;
+ x.cols?.forEach(col=>col.forEach(card=>delete card._justFlipped));
+ return x
+}
+function copy(){return cleanState(state)}
+function remember(){history.push(copy());if(history.length>100)history.shift()}
+function saveGame(){
+ if(!state)return;
+ try{
+  localStorage.setItem(SAVE_KEY,JSON.stringify({
+   version:1,state:cleanState(state),history:history.slice(-100),
+   wasStarted:started,savedAt:Date.now()
+  }))
+ }catch(e){console.warn('Save unavailable',e)}
+}
+function validSave(s){
+ return s&&Array.isArray(s.cols)&&s.cols.length===10&&Array.isArray(s.stock)&&
+  Number.isFinite(s.moves)&&Number.isFinite(s.completed)&&Number.isFinite(s.elapsed)
+}
+function restoreGame(){
+ try{
+  let raw=localStorage.getItem(SAVE_KEY);if(!raw)return false;
+  let saved=JSON.parse(raw);if(!validSave(saved.state))return false;
+  state=saved.state;
+  history=Array.isArray(saved.history)?saved.history.filter(validSave).slice(-100):[];
+  selected=null;animating=false;hintRun=null;pointer=null;
+  started=false;stopClock();
+  status.textContent='Saved game restored.';
+  render();
+  if(saved.wasStarted&&state.completed<8)startClock();
+  return true
+ }catch(e){console.warn('Restore failed',e);return false}
+}
+function hasProgress(){
+ return !!state&&(state.moves>0||state.completed>0||state.stock.length<50||state.elapsed>0)
+}
 function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
-function startClock(){if(started)return;started=true;startAt=Date.now()-state.elapsed*1000;timerId=setInterval(()=>{state.elapsed=Math.floor((Date.now()-startAt)/1000);stats()},1000)}
+function startClock(){if(started)return;started=true;startAt=Date.now()-state.elapsed*1000;timerId=setInterval(()=>{state.elapsed=Math.floor((Date.now()-startAt)/1000);stats();saveGame()},1000)}
 function stopClock(){clearInterval(timerId);timerId=null} function stats(){movesEl.textContent=state.moves;scoreEl.textContent=Math.max(0,500-state.moves+state.completed*100);timerEl.textContent=fmt(state.elapsed)}
 function cancelHint(msg=''){if(!hintRun)return;hintRun.cancelled=true;hintRun=null;hintCounter.hidden=true;document.querySelectorAll('.motion-stack').forEach(x=>x.remove());animating=false;if(msg)status.textContent=msg}
 function newGame(){cancelHint();stopClock();started=false;history=[];selected=null;let d=deck();shuffle(d);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,elapsed:0};status.textContent='Tap a movable card or stack. Smart Tap will make the best legal move.';render()}
@@ -332,7 +370,7 @@ render();
 flyers.forEach(f=>f.remove());
 await post();render();animating=false
 }
-function render(){columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.innerHTML=faceHTML(card);e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>pointerUp(ev,ci,i))}col.appendChild(e)});col.addEventListener('pointerup',e=>{if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});let deals=Math.floor(state.stock.length/10);stockEl.innerHTML='';for(let i=0;i<deals;i++){let s=document.createElement('div');s.className='stock-card';s.style.left=(i*10)+'px';s.style.top='2px';s.style.zIndex=i+1;stockEl.appendChild(s)}stockControl.disabled=!deals;stockControl.setAttribute('aria-label',deals?`Deal next row. ${deals} deals remaining`:'No deals remaining');completedEl.innerHTML='';for(let i=0;i<8;i++){let c=document.createElement('div');c.className=i<state.completed?'complete-card':'complete-slot';c.textContent=i<state.completed?'K♠':'♠';completedEl.appendChild(c)}undoBtn.disabled=!history.length;stats();setTimeout(()=>state.cols.forEach(col=>col.forEach(card=>delete card._justFlipped)),100)}
+function render(){columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.innerHTML=faceHTML(card);e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>pointerUp(ev,ci,i))}col.appendChild(e)});col.addEventListener('pointerup',e=>{if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});let deals=Math.floor(state.stock.length/10);stockEl.innerHTML='';for(let i=0;i<deals;i++){let s=document.createElement('div');s.className='stock-card';s.style.left=(i*10)+'px';s.style.top='2px';s.style.zIndex=i+1;stockEl.appendChild(s)}stockControl.disabled=!deals;stockControl.setAttribute('aria-label',deals?`Deal next row. ${deals} deals remaining`:'No deals remaining');completedEl.innerHTML='';for(let i=0;i<8;i++){let c=document.createElement('div');c.className=i<state.completed?'complete-card':'complete-slot';c.textContent=i<state.completed?'K♠':'♠';completedEl.appendChild(c)}undoBtn.disabled=!history.length;stats();saveGame();setTimeout(()=>state.cols.forEach(col=>col.forEach(card=>delete card._justFlipped)),100)}
 function pointerDown(e,c,i,el){if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;if(!movable(c,i))return;pointer={id:e.pointerId,c,i,x:e.clientX,y:e.clientY,drag:false,el,h:null,dx:0,dy:0};el.setPointerCapture?.(e.pointerId);document.addEventListener('pointermove',pointerMove,{passive:false})}
 function pointerMove(e){if(!pointer||e.pointerId!==pointer.id)return;let dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.drag&&Math.hypot(dx,dy)<12)return;if(!pointer.drag){pointer.drag=true;pointer.h=motionStack(pointer.c,pointer.i);let r=pointer.el.getBoundingClientRect();pointer.dx=e.clientX-r.left;pointer.dy=e.clientY-r.top}e.preventDefault();let br=board.getBoundingClientRect();pointer.h.style.left=(e.clientX-br.left-pointer.dx)+'px';pointer.h.style.top=(e.clientY-br.top-pointer.dy)+'px';document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column');if(t&&legal(pointer.c,pointer.i,+t.dataset.col))t.classList.add('drop-target')}
 function pointerUp(e,c,i){document.removeEventListener('pointermove',pointerMove);if(!pointer)return;document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let p=pointer;pointer=null;if(p.drag){let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column'),to=t?+t.dataset.col:null;p.h?.remove();if(to!==null&&legal(p.c,p.i,to)){perform(p.c,p.i,to,'Dragged move completed.');return}render();return}smart(c,i)}
@@ -343,11 +381,18 @@ for(let from=0;from<10&&!found;from++)for(let to=0;to<10&&!found;to++){if(from==
 if(found){render();let h=motionStack(found.to,found.index),src=cardEl(found.to,found.index);if(h&&src){let sr=src.getBoundingClientRect(),br=board.getBoundingClientRect(),dr=colEl(found.from).getBoundingClientRect(),baseCount=previous.cols[found.from].length-found.n,ys=offsets(previous.cols[found.from]),targetY=baseCount>0?ys[baseCount]:0,dx=(dr.left-br.left)-(sr.left-br.left),dy=(dr.top-br.top+targetY)-(sr.top-br.top);current.cols[found.to].slice(found.index).forEach((_,n)=>{let e=cardEl(found.to,found.index+n);if(e)e.style.visibility='hidden'});await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:190,easing:'cubic-bezier(.2,.8,.25,1)',fill:'forwards'}).finished.catch(()=>{});h.remove()}}else await sleep(90);
 history.pop();state=previous;animating=false;status.textContent='Last action undone.';render()
 }
-undoBtn.onclick=undo;hintBtn.onclick=runHints;stockControl.onclick=deal;const askNew=()=>{cancelHint();if(confirm('Start a new game?'))newGame()};newBtn.onclick=askNew;newBottom.onclick=askNew;
+undoBtn.onclick=undo;hintBtn.onclick=runHints;stockControl.onclick=deal;
+const askNew=()=>{
+ cancelHint();
+ if(!hasProgress()||confirm('Start a new game? Your current game will be replaced.'))newGame()
+};
+newBtn.onclick=askNew;newBottom.onclick=askNew;
+window.addEventListener('pagehide',saveGame);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveGame()});
 try{
-  newGame();
-  if(!state||state.cols.length!==10||state.cols.reduce((n,c)=>n+c.length,0)!==54){
-    throw new Error('Initial deal validation failed');
+  if(!restoreGame())newGame();
+  if(!state||state.cols.length!==10){
+    throw new Error('Game state validation failed');
   }
 }catch(err){
   console.error(err);
