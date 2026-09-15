@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.3.5</title>
+<title>Spider Solitaire 1.0J.3.6</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
@@ -37,7 +37,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .motion-stack.hinting{filter:drop-shadow(0 0 7px rgba(232,200,121,.9))}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(15px);background:#000d;color:#fff;padding:9px 13px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.18s;z-index:5000}.toast.show{opacity:1;transform:translateX(-50%)}
 @media(max-width:430px){body{padding:0}.game-shell{border-radius:0;min-height:100dvh}.topbar{padding:9px 7px;gap:7px}.brand-main{font-size:17px}.stats{gap:7px}.stat{min-width:38px}.stat strong{font-size:15px}.icon-btn{width:36px;height:36px}.subbar{padding:5px 7px}.board{padding-left:2px;padding-right:2px}.columns{gap:2px}.column{height:440px}.card.face,.motion-card{padding:2px 1px}}
-.court-index{position:absolute;left:4%;top:2%;z-index:3;width:28%;display:flex;flex-direction:column;align-items:center;line-height:.78;color:#111;pointer-events:none}.court-index span{font-family:Georgia,'Times New Roman',serif;font-size:30px;font-weight:800}.court-index b{font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:700;margin-top:5px}.court-card-art{position:absolute;left:25%;top:17%;width:108%;height:108%;object-fit:cover;object-position:55% 50%;clip-path:inset(8% 0 0 12%);display:block;pointer-events:none}.complete-fly{position:absolute;z-index:1900;pointer-events:none;filter:drop-shadow(0 3px 4px #0008)}.complete-card{animation:none}@keyframes completePop{0%{transform:scale(.55);opacity:.25}100%{transform:scale(1);opacity:1}}
+.court-index{position:absolute;left:4%;top:3%;z-index:4;width:24%;display:flex;flex-direction:column;align-items:center;line-height:.82;color:#111;pointer-events:none}.court-index span{font-family:Georgia,'Times New Roman',serif;font-size:25px;font-weight:800}.court-index b{font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:700;margin-top:4px}.court-card-art{position:absolute;left:26%;top:7%;width:190%;height:190%;object-fit:cover;object-position:60% 50%;clip-path:inset(18% 0 0 23%);display:block;pointer-events:none}.complete-fly{position:absolute;z-index:1900;pointer-events:none;filter:drop-shadow(0 3px 4px #0008)}.complete-card{animation:none}@keyframes completePop{0%{transform:scale(.55);opacity:.25}100%{transform:scale(1);opacity:1}}
 .win-overlay{position:absolute;inset:0;z-index:3000;background:#001d14cc;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
 .win-panel{width:min(82%,360px);padding:24px 18px;border:1px solid #e8c879;border-radius:18px;background:#063f2e;text-align:center;box-shadow:0 20px 50px #0008}
 .win-panel h2{margin:0 0 8px;color:#efd58e;font:700 30px Georgia,serif}.win-panel p{margin:7px 0;color:#fff}.win-panel button{margin-top:14px;padding:11px 24px;border-radius:12px;border:1px solid #efd58e;background:#e5bd65;color:#173326;font-weight:800}
@@ -55,7 +55,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.3.5</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.3.6</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -240,10 +240,17 @@ function legalMoves(){
            destructive:breaksBuiltRun(f,i)&&!moveCompletesSuit(f,i,to)});
  return a;
 }
+function hintProgress(m){
+ let s=state.cols[m.from], moving=s.slice(m.index), d=state.cols[m.to];
+ let exposesHidden=m.index>0&&!s[m.index-1].faceUp;
+ let emptiesSource=m.index===0;
+ let completes=moveCompletesSuit(m.from,m.index,m.to);
+ let joinsRun=d.length>0&&resultingRunLength(m.from,m.index,m.to)>moving.length;
+ let meaningfulJoin=joinsRun&&(topRunLength(m.to)>=2||moving.length>=2);
+ return completes||exposesHidden||emptiesSource||meaningfulJoin;
+}
 function allMoves(){
- let a=legalMoves();
- let constructive=a.filter(m=>!m.destructive);
- if(constructive.length)a=constructive;
+ let a=legalMoves().filter(m=>!m.destructive&&hintProgress(m));
  a.sort((x,y)=>y.score-x.score);
  let seen=new Set();
  return a.filter(m=>{let k=`${m.from}-${m.index}-${m.to}`;if(seen.has(k))return false;seen.add(k);return true});
@@ -258,7 +265,7 @@ function colEl(c){return columnsEl.querySelector(`.column[data-col="${c}"]`)}
 function destinationPoint(to){let col=colEl(to),r=col.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[to],ys=offsets(cards);let y=cards.length?ys[cards.length-1]+27:0;return{x:r.left-br.left,y:r.top-br.top+y}}
 function motionStack(from,index,hint=false){let el=cardEl(from,index),cr=el.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[from].slice(index),h=document.createElement('div');h.className='motion-stack'+(hint?' hinting':'');h.style.width=cr.width+'px';let msp=spacingFor(cards).up;h.style.height=(cr.height+(cards.length-1)*msp)+'px';h.style.left=(cr.left-br.left)+'px';h.style.top=(cr.top-br.top)+'px';cards.forEach((c,n)=>{let d=document.createElement('div');d.className='motion-card';d.style.top=(n*msp)+'px';d.innerHTML=faceHTML(c);h.appendChild(d)});board.appendChild(h);return h}
 async function animatePreview(m,run,num,total){if(run.cancelled)return;render();let h=motionStack(m.from,m.index,true),start=cardEl(m.from,m.index).getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to);let sx=start.left-br.left,sy=start.top-br.top,dx=dest.x-sx,dy=dest.y-sy;hintCounter.textContent=`Hint ${num} of ${total}`;hintCounter.hidden=false;await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:550,easing:'ease-in-out',fill:'forwards'}).finished.catch(()=>{});if(run.cancelled){h.remove();return}await sleep(280);await h.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'translate(0,0)'}],{duration:450,easing:'ease-in-out',fill:'forwards'}).finished.catch(()=>{});h.remove();await sleep(180)}
-async function runHints(){if(hintRun){cancelHint('Hint tour stopped.');return}let ranked=allMoves(),good=ranked.filter(m=>m.score>0);let list=(good.length?good:ranked.slice(0,1)).slice(0,5);if(!list.length){status.textContent=state.stock.length>=10?'No legal tableau move found. Try Deal.':'No legal move found.';toast('Try Deal');return}let run={cancelled:false};hintRun=run;animating=true;status.textContent=`Showing ${list.length} possible move${list.length===1?'':'s'}…`;for(let n=0;n<list.length;n++){if(run.cancelled)break;await animatePreview(list[n],run,n+1,list.length)}if(!run.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent='Hint tour complete. Make any move you like.'}}
+async function runHints(){if(hintRun){cancelHint('Hint tour stopped.');return}let ranked=allMoves(),good=ranked.filter(m=>m.score>0);let list=(good.length?good:ranked.slice(0,1)).slice(0,5);if(!list.length){status.textContent=state.stock.length>=10?'No useful tableau move found. Try Deal.':'No useful move found.';toast(state.stock.length>=10?'Try Deal':'No useful hint');return}let run={cancelled:false};hintRun=run;animating=true;status.textContent=`Showing ${list.length} possible move${list.length===1?'':'s'}…`;for(let n=0;n<list.length;n++){if(run.cancelled)break;await animatePreview(list[n],run,n+1,list.length)}if(!run.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent='Hint tour complete. Make any move you like.'}}
 async function animateReal(m,commit){
 animating=true;render();
 let h=motionStack(m.from,m.index),src=cardEl(m.from,m.index),sr=src.getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to),dx=dest.x-(sr.left-br.left),dy=dest.y-(sr.top-br.top);
