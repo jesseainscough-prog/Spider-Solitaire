@@ -23,7 +23,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .card.back{background:repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px);border:1.5px solid #e3edf7;outline:1px solid #174a7d;outline-offset:-4px}
 .card.face,.motion-card{background:var(--cream);color:#111;border:1px solid #d5d2c9;padding:3px 2px;font-family:Georgia,serif;font-weight:700}
 .rank{font-size:clamp(10px,3vw,22px);line-height:.95}.suit{font-size:clamp(8px,2.5vw,17px);line-height:1}
-.card.selected{outline:3px solid var(--gold);outline-offset:-2px}.card.just-flipped{animation:quickFlip .11s ease-out}@keyframes quickFlip{0%{transform:scaleX(.18)}100%{transform:scaleX(1)}}
+.card.selected{outline:3px solid var(--gold);outline-offset:-2px}.card.just-flipped{animation:quickFlip .08s ease-out}@keyframes quickFlip{0%{transform:scaleX(.2)}100%{transform:scaleX(1)}}
 .watermark{position:absolute;left:0;right:0;top:180px;text-align:center;font-size:145px;color:#000;opacity:.05;pointer-events:none;z-index:1}
 .stock-wrap{position:absolute;right:13px;bottom:104px;z-index:3;text-align:center;font-size:11px}.stock-control{width:88px;height:64px;padding:0;background:transparent;border:0;cursor:pointer;touch-action:manipulation}.stock-control:disabled{opacity:.45}.stock{width:88px;height:59px;position:relative;margin:0 auto}
 .stock-card{position:absolute;width:39px;height:55px;border-radius:4px;background:repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px);border:1px solid #e3edf7}
@@ -83,7 +83,7 @@ function cancelHint(msg=''){if(!hintRun)return;hintRun.cancelled=true;hintRun=nu
 function newGame(){cancelHint();stopClock();started=false;history=[];selected=null;let d=deck();shuffle(d);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,elapsed:0};status.textContent='Tap a movable card or stack. Smart Tap will make the best legal move.';render()}
 function movable(c,i){let a=state.cols[c];if(i<0||!a[i]?.faceUp)return false;for(let x=i;x<a.length-1;x++)if(!a[x+1].faceUp||val(a[x].rank)!==val(a[x+1].rank)+1)return false;return true}
 function legal(f,i,t){if(f===t||!movable(f,i))return false;let m=state.cols[f][i],d=state.cols[t];return !d.length||val(d[d.length-1].rank)===val(m.rank)+1}
-function flip(c){let a=state.cols[c];if(a.length&&!a[a.length-1].faceUp)a[a.length-1].faceUp=true}
+function flip(c){let a=state.cols[c];if(a.length&&!a[a.length-1].faceUp){a[a.length-1].faceUp=true;a[a.length-1]._justFlipped=true}}
 function complete(c){let a=state.cols[c];if(a.length<13)return false;let s=a.length-13;for(let i=0;i<13;i++)if(!a[s+i].faceUp||val(a[s+i].rank)!==13-i)return false;a.splice(s,13);state.completed++;flip(c);return true}
 function post(){for(let c=0;c<10;c++)while(complete(c)){};if(state.completed===8){stopClock();toast('You win!');status.textContent=`You won in ${state.moves} moves and ${fmt(state.elapsed)}!`}render()}
 function offsets(a){let y=0,o=[];for(const c of a){o.push(y);y+=c.faceUp?27:11}return o}
@@ -95,41 +95,34 @@ function colEl(c){return columnsEl.querySelector(`.column[data-col="${c}"]`)}
 function destinationPoint(to){let col=colEl(to),r=col.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[to],ys=offsets(cards);let y=cards.length?ys[cards.length-1]+27:0;return{x:r.left-br.left,y:r.top-br.top+y}}
 function motionStack(from,index,hint=false){let el=cardEl(from,index),cr=el.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[from].slice(index),h=document.createElement('div');h.className='motion-stack'+(hint?' hinting':'');h.style.width=cr.width+'px';h.style.height=(cr.height+(cards.length-1)*27)+'px';h.style.left=(cr.left-br.left)+'px';h.style.top=(cr.top-br.top)+'px';cards.forEach((c,n)=>{let d=document.createElement('div');d.className='motion-card';d.style.top=(n*27)+'px';d.innerHTML=`<div class="rank">${c.rank}</div><div class="suit">♠</div>`;h.appendChild(d)});board.appendChild(h);return h}
 async function animatePreview(m,run,num,total){if(run.cancelled)return;render();let h=motionStack(m.from,m.index,true),start=cardEl(m.from,m.index).getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to);let sx=start.left-br.left,sy=start.top-br.top,dx=dest.x-sx,dy=dest.y-sy;hintCounter.textContent=`Hint ${num} of ${total}`;hintCounter.hidden=false;await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:550,easing:'ease-in-out',fill:'forwards'}).finished.catch(()=>{});if(run.cancelled){h.remove();return}await sleep(280);await h.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'translate(0,0)'}],{duration:450,easing:'ease-in-out',fill:'forwards'}).finished.catch(()=>{});h.remove();await sleep(180)}
-async function runHints(){if(hintRun){cancelHint('Hint tour stopped.');return}let list=allMoves().slice(0,5);if(!list.length){status.textContent=state.stock.length>=10?'No legal tableau move found. Tap the stock.':'No legal move found.';toast('Try the stock');return}let run={cancelled:false};hintRun=run;animating=true;status.textContent=`Showing ${list.length} possible move${list.length===1?'':'s'}…`;for(let n=0;n<list.length;n++){if(run.cancelled)break;await animatePreview(list[n],run,n+1,list.length)}if(!run.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent='Hint tour complete. Make any move you like.'}}
-async function animateReal(m,commit){animating=true;render();let h=motionStack(m.from,m.index),src=cardEl(m.from,m.index),sr=src.getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to),dx=dest.x-(sr.left-br.left),dy=dest.y-(sr.top-br.top);state.cols[m.from].slice(m.index).forEach((_,n)=>{let e=cardEl(m.from,m.index+n);if(e)e.style.visibility='hidden'});await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:165,easing:'cubic-bezier(.2,.85,.25,1)',fill:'forwards'}).finished.catch(()=>{});commit();h.remove();animating=false}
+async function runHints(){if(hintRun){cancelHint('Hint tour stopped.');return}let list=allMoves().slice(0,5);if(!list.length){status.textContent=state.stock.length>=10?'No legal tableau move found. Try Deal.':'No legal move found.';toast('Try Deal');return}let run={cancelled:false};hintRun=run;animating=true;status.textContent=`Showing ${list.length} possible move${list.length===1?'':'s'}…`;for(let n=0;n<list.length;n++){if(run.cancelled)break;await animatePreview(list[n],run,n+1,list.length)}if(!run.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent='Hint tour complete. Make any move you like.'}}
+async function animateReal(m,commit){animating=true;render();let h=motionStack(m.from,m.index),src=cardEl(m.from,m.index),sr=src.getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to),dx=dest.x-(sr.left-br.left),dy=dest.y-(sr.top-br.top);state.cols[m.from].slice(m.index).forEach((_,n)=>{let e=cardEl(m.from,m.index+n);if(e)e.style.visibility='hidden'});await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:160,easing:'cubic-bezier(.2,.85,.25,1)',fill:'forwards'}).finished.catch(()=>{});commit();h.remove();animating=false}
 async function perform(f,i,t,msg='Moved.'){if(animating||!legal(f,i,t))return false;cancelHint();let m={from:f,index:i,to:t};remember();startClock();await animateReal(m,()=>{state.cols[t].push(...state.cols[f].splice(i));flip(f);state.moves++;selected=null;status.textContent=msg;post()});return true}
 function smart(c,i){if(hintRun)cancelHint();if(animating)return;if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';return}let m=best(c,i);if(m)perform(c,i,m.to,'Smart move completed.');else{selected={col:c,index:i};status.textContent='No automatic move found. Tap a destination or drag.';render()}}
 function tapDest(c){if(selected)perform(selected.col,selected.index,c,'Manual move completed.')}
 async function deal(){
-  if(hintRun)cancelHint('Hint tour stopped.');
-  if(animating)return;
-  if(state.stock.length<10){toast('No deals remaining');return}
-  if(state.cols.some(c=>c.length===0)){toast('Fill empty columns before dealing');return}
-  remember();startClock();animating=true;
-  const boardRect=board.getBoundingClientRect();
-  const stockRect=stockEl.getBoundingClientRect();
-  const flyers=[];
-  for(let c=0;c<10;c++){
-    const target=colsEl.children[c].getBoundingClientRect();
-    const card=state.stock[state.stock.length-1-c];
-    const f=document.createElement('div');
-    f.className='motion-card card back';
-    f.style.position='absolute';
-    f.style.zIndex=1600+c;
-    f.style.width=Math.max(28,target.width)+'px';
-    f.style.height=(target.width/.69)+'px';
-    f.style.left=(stockRect.left-boardRect.left+18)+'px';
-    f.style.top=(stockRect.top-boardRect.top)+'px';
-    board.appendChild(f); flyers.push(f);
-    const tx=target.left-boardRect.left-(stockRect.left-boardRect.left+18);
-    const ty=Math.min(390, state.cols[c].length*27+10)-(stockRect.top-boardRect.top);
-    f.animate([{transform:'translate(0,0)'},{transform:`translate(${tx}px,${ty}px)`}],{duration:230,delay:c*38,easing:'cubic-bezier(.2,.8,.25,1)',fill:'forwards'});
-  }
-  await new Promise(r=>setTimeout(r,590));
-  flyers.forEach(f=>f.remove());
-  for(let c=0;c<10;c++){let card=state.stock.pop();card.up=true;state.cols[c].push(card)}
-  state.moves++;post();animating=false;
-  toast('Dealt one new card to every column.');
+if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;
+if(state.stock.length<10){toast('No deals remaining');return}
+if(state.cols.some(c=>!c.length)){toast('Fill empty columns before dealing');return}
+remember();startClock();animating=true;selected=null;
+const br=board.getBoundingClientRect(), sr=stockEl.getBoundingClientRect(), flyers=[];
+for(let c=0;c<10;c++){
+ const col=colEl(c), tr=col.getBoundingClientRect(), f=document.createElement('div');
+ f.className='card back';f.style.position='absolute';f.style.zIndex=1600+c;f.style.width=tr.width+'px';
+ f.style.left=(sr.left-br.left+38)+'px';f.style.top=(sr.top-br.top+2)+'px';board.appendChild(f);flyers.push(f);
+ const tx=(tr.left-br.left)-(sr.left-br.left+38), ty=(tr.top-br.top+offsets(state.cols[c]).slice(-1)[0]+27)-(sr.top-br.top+2);
+ f.animate([{transform:'translate(0,0)'},{transform:`translate(${tx}px,${ty}px)`}],{duration:190,delay:c*32,easing:'cubic-bezier(.2,.8,.25,1)',fill:'forwards'});
+}
+await sleep(500);flyers.forEach(f=>f.remove());
+for(let c=0;c<10;c++){let x=state.stock.pop();x.faceUp=true;state.cols[c].push(x)}
+state.moves++;status.textContent='Dealt one new card to every column.';animating=false;post()
+}
+function render(){columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.innerHTML=`<div class="rank">${card.rank}</div><div class="suit">♠</div>`;e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>pointerUp(ev,ci,i))}col.appendChild(e)});col.addEventListener('pointerup',e=>{if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});let deals=Math.floor(state.stock.length/10);stockEl.innerHTML='';for(let i=0;i<deals;i++){let s=document.createElement('div');s.className='stock-card';s.style.left=(i*10)+'px';s.style.top='2px';s.style.zIndex=i+1;stockEl.appendChild(s)}stockControl.disabled=!deals;stockControl.setAttribute('aria-label',deals?`Deal next row. ${deals} deals remaining`:'No deals remaining');completedEl.innerHTML='';for(let i=0;i<state.completed;i++){let c=document.createElement('div');c.className='complete-card';c.textContent='♠';completedEl.appendChild(c)}undoBtn.disabled=!history.length;stats();setTimeout(()=>state.cols.forEach(col=>col.forEach(card=>delete card._justFlipped)),100)}
+function pointerDown(e,c,i,el){if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;if(!movable(c,i))return;pointer={id:e.pointerId,c,i,x:e.clientX,y:e.clientY,drag:false,el,h:null,dx:0,dy:0};el.setPointerCapture?.(e.pointerId);document.addEventListener('pointermove',pointerMove,{passive:false})}
+function pointerMove(e){if(!pointer||e.pointerId!==pointer.id)return;let dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.drag&&Math.hypot(dx,dy)<12)return;if(!pointer.drag){pointer.drag=true;pointer.h=motionStack(pointer.c,pointer.i);let r=pointer.el.getBoundingClientRect();pointer.dx=e.clientX-r.left;pointer.dy=e.clientY-r.top}e.preventDefault();let br=board.getBoundingClientRect();pointer.h.style.left=(e.clientX-br.left-pointer.dx)+'px';pointer.h.style.top=(e.clientY-br.top-pointer.dy)+'px';document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column');if(t&&legal(pointer.c,pointer.i,+t.dataset.col))t.classList.add('drop-target')}
+function pointerUp(e,c,i){document.removeEventListener('pointermove',pointerMove);if(!pointer)return;document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let p=pointer;pointer=null;if(p.drag){let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column'),to=t?+t.dataset.col:null;p.h?.remove();if(to!==null&&legal(p.c,p.i,to)){perform(p.c,p.i,to,'Dragged move completed.');return}render();return}smart(c,i)}
+async function undo(){if(hintRun)cancelHint('Hint tour stopped.');if(animating||!history.length)return;let previous=history[history.length-1],current=copy();let candidate=null;outer:for(let pc=0;pc<10;pc++)for(let cc=0;cc<10;cc++){if(pc===cc)continue;let p=previous.cols[pc],c=current.cols[cc];if(p.length>state.cols[pc].length&&c.length>previous.cols[cc].length){candidate={};break outer}}history.pop();state=previous;selected=null;status.textContent='Last action undone.';render()}
+undoBtn.onclick=undo;hintBtn.onclick=runHints;stockControl.onclick=deal;const askNew=()=>{cancelHint();if(confirm('Start a new game?'))newGame()};newBtn.onclick=askNew;newBottom.onclick=askNew;newGame();
 })();
 </script>
 </body>
