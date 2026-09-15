@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.10</title>
+<title>Spider Solitaire 1.0J.10.1</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -24,7 +24,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .card.face,.motion-card{background:linear-gradient(145deg,#fff,#f4f1e8);color:#090909;border:1px solid #c8c5bc;padding:3px 2px;font-family:Georgia,serif;font-weight:700;box-shadow:0 2px 4px #0007,inset 0 1px 0 #fff}
 .rank{font-size:clamp(14px,4.2vw,27px);line-height:.9;font-weight:800}.suit{font-size:clamp(18px,5.4vw,36px);line-height:.9;margin-top:3px;font-weight:900}
 .card-index{position:absolute;left:3px;top:2px;z-index:6;display:flex;align-items:center;gap:2px;white-space:nowrap;font:800 clamp(12px,3.7vw,21px)/1 Georgia,'Times New Roman',serif;color:#111;text-shadow:0 1px 0 #fff}.card-index.red{color:#b01828}.card.face.has-index>.rank,.card.face.has-index>.suit{visibility:hidden}.card.face.has-index .court-index{display:none}.card-body-suit{position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);font:900 clamp(30px,8vw,54px)/1 Georgia,'Times New Roman',serif;color:#111;pointer-events:none}.card-body-suit.red{color:#b01828}.court-portrait{top:22%!important;height:78%!important;object-position:53% 8%!important}@media(max-width:430px){.card-index{left:2px;top:2px;gap:1px;font-size:clamp(11px,3.5vw,17px)}}
-.card.selected{outline:3px solid var(--gold);outline-offset:-2px}.card.just-flipped{animation:quickFlip .14s ease-out;transform-origin:center}.early-flip{animation:quickFlip .14s ease-out;transform-origin:center}@keyframes quickFlip{0%{transform:perspective(500px) rotateY(88deg)}55%{transform:perspective(500px) rotateY(38deg)}100%{transform:perspective(500px) rotateY(0)}}
+.card.selected{outline:3px solid var(--gold);outline-offset:-2px}.card.just-flipped,.early-flip{animation:quickFlip .24s cubic-bezier(.2,.75,.25,1);transform-origin:center center;backface-visibility:hidden;-webkit-backface-visibility:hidden;will-change:transform}@keyframes quickFlip{0%{transform:scaleX(.05)}48%{transform:scaleX(.05)}100%{transform:scaleX(1)}}
 .watermark{position:absolute;left:0;right:0;top:180px;text-align:center;font-size:145px;color:#000;opacity:.05;pointer-events:none;z-index:1}
 .stock-wrap{position:absolute;right:10px;top:10px;z-index:3;text-align:center;font-size:11px}.stock-control{width:88px;height:64px;padding:0;background:transparent;border:0;cursor:pointer;touch-action:manipulation}.stock-control:disabled{opacity:.45}.stock{width:88px;height:59px;position:relative;margin:0 auto}
 .stock-card{position:absolute;width:39px;height:55px;border-radius:4px;background:repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px);border:1px solid #e3edf7}
@@ -33,9 +33,9 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .toolbar-btn{min-height:40px;border-radius:12px;font-weight:700;color:#fff;background:#ffffff14;border:1px solid #ffffff24}.toolbar-btn:disabled{color:#ffffff59}.deal-btn{background:linear-gradient(#efd58e,#d4ac58);color:#17241d;border-color:#efd58e}.deal-btn:disabled{opacity:.5}
 .status{max-width:820px;margin:7px auto 0;font-size:13px;color:#bfc8c3;min-height:20px}
 .hint-counter{position:absolute;left:50%;bottom:110px;transform:translateX(-50%);z-index:1200;background:#001f16e8;border:1px solid var(--gold);color:var(--gold);border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700}
-.motion-stack{position:absolute;z-index:1100;pointer-events:none;filter:drop-shadow(0 7px 6px #0006);will-change:transform}
-.motion-card{position:absolute;left:0;width:100%;aspect-ratio:.69;border-radius:5px}
-.motion-stack.hinting{filter:drop-shadow(0 0 7px rgba(232,200,121,.9))}
+.motion-stack{position:absolute;z-index:1100;pointer-events:none;will-change:transform;transform:translateZ(0);backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.motion-card{position:absolute;left:0;width:100%;aspect-ratio:.69;border-radius:5px;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.motion-stack.hinting{filter:none;outline:2px solid var(--gold);outline-offset:2px;border-radius:6px}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(15px);background:#000d;color:#fff;padding:9px 13px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.18s;z-index:5000}.toast.show{opacity:1;transform:translateX(-50%)}
 @media(max-width:430px){body{padding:0}.game-shell{border-radius:0;min-height:100dvh}.topbar{padding:9px 7px;gap:7px}.brand-main{font-size:17px}.stats{gap:7px}.stat{min-width:38px}.stat strong{font-size:15px}.icon-btn{width:36px;height:36px}.subbar{padding:5px 7px}.board{padding-left:2px;padding-right:2px}.columns{gap:2px}.column{height:440px}.card.face,.motion-card{padding:2px 1px}}
 .court-face{position:absolute;inset:0;overflow:hidden;pointer-events:none}
@@ -78,7 +78,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.10</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.10.1</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -561,7 +561,20 @@ function cardEl(c,i){return columnsEl.querySelector(`.card[data-col="${c}"][data
 function colEl(c){return columnsEl.querySelector(`.column[data-col="${c}"]`)}
 function destinationPoint(to){let col=colEl(to),r=col.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[to],ys=offsets(cards);let y=cards.length?ys[cards.length-1]+27:0;return{x:r.left-br.left,y:r.top-br.top+y}}
 function motionStack(from,index,hint=false){let el=cardEl(from,index),cr=el.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[from].slice(index),h=document.createElement('div');h.className='motion-stack'+(hint?' hinting':'');h.style.width=cr.width+'px';let msp=spacingFor(cards).up;h.style.height=(cr.height+(cards.length-1)*msp)+'px';h.style.left=(cr.left-br.left)+'px';h.style.top=(cr.top-br.top)+'px';cards.forEach((c,n)=>{let d=document.createElement('div');d.className='motion-card';d.style.top=(n*msp)+'px';d.innerHTML=faceHTML(c);h.appendChild(d)});board.appendChild(h);return h}
-async function animatePreview(m,run,num,total){if(run.cancelled)return;render();let h=motionStack(m.from,m.index,true),start=cardEl(m.from,m.index).getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to);let sx=start.left-br.left,sy=start.top-br.top,dx=dest.x-sx,dy=dest.y-sy;hintCounter.textContent=`Hint ${num} of ${total}`;hintCounter.hidden=false;await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:550,easing:'ease-in-out',fill:'forwards'}).finished.catch(()=>{});if(run.cancelled){h.remove();return}await sleep(280);await h.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:'translate(0,0)'}],{duration:450,easing:'ease-in-out',fill:'forwards'}).finished.catch(()=>{});h.remove();await sleep(180)}
+async function animatePreview(m,run,num,total){
+ if(run.cancelled)return;render();
+ let originals=state.cols[m.from].slice(m.index).map((_,n)=>cardEl(m.from,m.index+n)).filter(Boolean);
+ let h=motionStack(m.from,m.index,true),start=cardEl(m.from,m.index).getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to);
+ originals.forEach(e=>e.style.visibility='hidden');
+ let sx=start.left-br.left,sy=start.top-br.top,dx=dest.x-sx,dy=dest.y-sy;
+ hintCounter.textContent=`Hint ${num} of ${total}`;hintCounter.hidden=false;
+ try{
+  await h.animate([{transform:'translate3d(0,0,0)'},{transform:`translate3d(${dx}px,${dy}px,0)`}],{duration:520,easing:'cubic-bezier(.25,.75,.25,1)',fill:'forwards'}).finished.catch(()=>{});
+  if(run.cancelled)return;await sleep(240);
+  await h.animate([{transform:`translate3d(${dx}px,${dy}px,0)`},{transform:'translate3d(0,0,0)'}],{duration:420,easing:'cubic-bezier(.25,.75,.25,1)',fill:'forwards'}).finished.catch(()=>{});
+ }finally{h.remove();originals.forEach(e=>e.style.visibility='visible')}
+ await sleep(160)
+}
 async function runHints(){if(hintRun){cancelHint('Hint tour stopped.');return}let ranked=allMoves(),list=ranked.slice(0,5);if(!list.length){status.textContent=state.stock.length>=10?'No legal tableau move found. Try Deal.':'No legal move found.';toast(state.stock.length>=10?'Try Deal':'No legal move');return}let run={cancelled:false};hintRun=run;animating=true;status.textContent=`Showing ${list.length} possible move${list.length===1?'':'s'}…`;for(let n=0;n<list.length;n++){if(run.cancelled)break;await animatePreview(list[n],run,n+1,list.length)}if(!run.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent='Hint tour complete. Make any move you like.'}}
 async function animateReal(m,commit){
  animating=true;render();
@@ -632,7 +645,7 @@ $('settings').onclick=()=>{cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.10');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.10.1');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
