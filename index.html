@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.9.2</title>
+<title>Spider Solitaire 1.0J.10</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -62,7 +62,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .settings-section{margin:15px 0}.settings-section h3{margin:0 0 7px;color:#efd58e;font:700 15px Georgia,serif;letter-spacing:.04em}
 .settings-row{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;padding:12px 11px;margin:6px 0;border:1px solid #ffffff22;border-radius:12px;background:#ffffff0b;color:#fff;font:inherit}
 .settings-row b{font-size:13px}.settings-row span{font-size:11px;opacity:.62}.settings-row .chev{font-size:18px;color:#efd58e;opacity:1}.settings-row:disabled{opacity:.42}
-.settings-note{font-size:11px;opacity:.55;line-height:1.4;margin:8px 2px}.choice-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}.choice-card{border:2px solid #ffffff24;background:#ffffff0c;color:#fff;border-radius:13px;padding:10px;text-align:left}.choice-card.selected{border-color:#efd58e;box-shadow:0 0 0 1px #efd58e55}.felt-swatch{height:66px;border-radius:9px;margin-bottom:8px;border:1px solid #ffffff35}.choice-card b{font-size:13px}.choice-card small{display:block;opacity:.6;margin-top:3px}.cardback-swatch{height:72px;width:50px;margin:0 auto 8px;border-radius:6px;border:2px solid #e3edf7;box-shadow:0 2px 4px #0006}.toggle{position:relative;width:46px;height:27px;border-radius:14px;background:#ffffff28;flex:0 0 auto}.toggle.on{background:#d5b965}.toggle::after{content:"";position:absolute;width:21px;height:21px;left:3px;top:3px;border-radius:50%;background:#fff}.toggle.on::after{transform:translateX(19px)}
+.settings-note{font-size:11px;opacity:.55;line-height:1.4;margin:8px 2px}.daily-card{margin:10px 0;padding:13px;border:1px solid #e8c87966;border-radius:13px;background:#ffffff0c}.daily-card h3{margin:0 0 4px;color:#efd58e;font:700 18px Georgia,serif}.daily-meta{font-size:11px;opacity:.72;line-height:1.45}.daily-btn{width:100%;margin-top:10px;padding:11px;border-radius:11px;border:1px solid #efd58e;background:#e5bd65;color:#173326;font-weight:800}.daily-badge{display:inline-block;margin-left:5px;padding:2px 6px;border-radius:999px;background:#e8c87922;color:#efd58e;font-size:10px}.choice-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}.choice-card{border:2px solid #ffffff24;background:#ffffff0c;color:#fff;border-radius:13px;padding:10px;text-align:left}.choice-card.selected{border-color:#efd58e;box-shadow:0 0 0 1px #efd58e55}.felt-swatch{height:66px;border-radius:9px;margin-bottom:8px;border:1px solid #ffffff35}.choice-card b{font-size:13px}.choice-card small{display:block;opacity:.6;margin-top:3px}.cardback-swatch{height:72px;width:50px;margin:0 auto 8px;border-radius:6px;border:2px solid #e3edf7;box-shadow:0 2px 4px #0006}.toggle{position:relative;width:46px;height:27px;border-radius:14px;background:#ffffff28;flex:0 0 auto}.toggle.on{background:#d5b965}.toggle::after{content:"";position:absolute;width:21px;height:21px;left:3px;top:3px;border-radius:50%;background:#fff}.toggle.on::after{transform:translateX(19px)}
 
 
 .stats-head h2,.collection-head h2{text-align:center}.stats-close,.collection-close{min-width:42px;font-size:20px;line-height:1}</style>
@@ -78,7 +78,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.9.2</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.10</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -116,7 +116,17 @@ function faceHTML(card){
 }
 function activeSuits(){return prefs.suits===4?['♠','♥','♣','♦']:prefs.suits===2?['♠','♥']:['♠']}
 function deck(){let d=[],id=0,suits=activeSuits();for(let copy=0;copy<8;copy++)for(const rank of ranks)d.push({id:id++,rank,suit:suits[copy%suits.length],faceUp:false});return d}
-function shuffle(a){for(let i=a.length-1;i;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
+function shuffle(a,rng=Math.random){for(let i=a.length-1;i;i--){let j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
+const DAILY_KEY='spider-solitaire-daily';
+let dailyMode=false,dailyDate=null;
+function dateKey(d=new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function dailyData(){try{return JSON.parse(localStorage.getItem(DAILY_KEY)||'{}')}catch{return {}}}
+function saveDaily(x){try{localStorage.setItem(DAILY_KEY,JSON.stringify(x))}catch(e){}}
+function seedFromString(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function seededRandom(seed){let a=seed>>>0;return function(){a+=0x6D2B79F5;let x=a;x=Math.imul(x^x>>>15,x|1);x^=x+Math.imul(x^x>>>7,x|61);return ((x^x>>>14)>>>0)/4294967296}}
+function dailyDifficulty(key=dateKey()){let n=Math.floor(new Date(key+'T12:00:00').getTime()/86400000);return [1,2,4][((n%3)+3)%3]}
+function difficultyName(n){return n===4?'4 Suits · Hard':n===2?'2 Suits · Medium':'1 Suit · Easy'}
+function dailyStreakInfo(){let wins=(dailyData().wins||{}),today=new Date(),streak=0;for(let i=0;i<3660;i++){let d=new Date(today);d.setDate(today.getDate()-i);if(wins[dateKey(d)])streak++;else if(i===0)continue;else break}return {streak,completed:!!wins[dateKey()]}}
 const SAVE_KEY='spider-solitaire-j4-save';
 const COLLECTION_KEY='spider-solitaire-celebrations';
 const PLAYER_STATS_KEY='spider-solitaire-player-stats';
@@ -154,12 +164,13 @@ function showSuitChooser(){
  o.querySelectorAll('[data-suits]').forEach(b=>b.onclick=()=>{let n=+b.dataset.suits;if(n===prefs.suits){o.remove();showSettings();return}
    let progressed=state&&(state.moves>0||state.elapsed>0||state.completed>0||state.stock.length<50);
    if(progressed&&!confirm(`Switch to ${n} Suit${n===1?'':'s'}? This will start a new deal.`))return;
-   prefs.suits=n;setPrefs(prefs);o.remove();newGame();showSettings();
+   dailyMode=false;dailyDate=null;prefs.suits=n;setPrefs(prefs);o.remove();newGame();showSettings();
  })
 }
 function showSettings(){
  document.querySelector('.settings-overlay')?.remove();let o=document.createElement('div');o.className='settings-overlay';
  o.innerHTML=`<div class="settings-head"><h2>Settings</h2><button class="settings-close">×</button></div>
+ <div class="daily-card"><h3>Daily Challenge <span class="daily-badge">${dailyStreakInfo().completed?'Completed Today':'New Today'}</span></h3><div class="daily-meta">${dateKey()} · ${difficultyName(dailyDifficulty())}<br>Current daily streak: <b>${dailyStreakInfo().streak}</b></div><button class="daily-btn" id="startDaily">${dailyStreakInfo().completed?'Play Today Again':'Play Today’s Challenge'}</button></div>
  <div class="settings-section"><h3>Player</h3>
   <button class="settings-row" data-open="stats"><span><b>Stats & History</b><br><span>Records, streaks and recent games</span></span><span class="chev">›</span></button>
   <button class="settings-row" data-open="collection"><span><b>Celebration Collection</b><br><span>View your collected win animations</span></span><span class="chev">›</span></button>
@@ -180,6 +191,13 @@ function showSettings(){
  <div class="settings-note">More customization will be added here as Spider Solitaire grows.</div>`;
  board.appendChild(o);
  o.querySelector('.settings-close').onclick=()=>o.remove();
+ let db=o.querySelector('#startDaily');if(db)db.onclick=()=>{
+  let progressed=state&&(state.moves>0||state.elapsed>0||state.completed>0||state.stock.length<50);
+  if(progressed&&!confirm('Start today’s Daily Challenge? This will replace your current game.'))return;
+  if(progressed&&!developerGame)recordFinishedGame(false);
+  dailyMode=true;dailyDate=dateKey();prefs.suits=dailyDifficulty(dailyDate);setPrefs(prefs);o.remove();newGame();
+  status.textContent=`Daily Challenge ${dailyDate} · ${difficultyName(prefs.suits)}`;
+ };
  o.querySelector('[data-open="stats"]').onclick=()=>{o.remove();showStats()};
  o.querySelector('[data-open="collection"]').onclick=()=>{o.remove();showCollection()};
  o.querySelector('[data-open="suits"]').onclick=()=>{o.remove();showSuitChooser()};
@@ -211,7 +229,7 @@ function saveGame(){
  if(!state)return;
  try{
   localStorage.setItem(SAVE_KEY,JSON.stringify({
-   version:1,state:cleanState(state),history:history.slice(-100),developerGame,suits:prefs.suits,
+   version:1,state:cleanState(state),history:history.slice(-100),developerGame,suits:prefs.suits,dailyMode,dailyDate,
    wasStarted:started,savedAt:Date.now()
   }))
  }catch(e){console.warn('Save unavailable',e)}
@@ -226,6 +244,7 @@ function restoreGame(){
   let saved=JSON.parse(raw);if(!validSave(saved.state))return false;
   state=saved.state;
   if(saved.suits===1||saved.suits===2||saved.suits===4){prefs.suits=saved.suits;setPrefs(prefs)}
+  dailyMode=!!saved.dailyMode;dailyDate=saved.dailyDate||null;
   developerGame=!!saved.developerGame;
   history=Array.isArray(saved.history)?saved.history.filter(validSave).slice(-100):[];
   selected=null;animating=false;hintRun=null;pointer=null;
@@ -306,7 +325,7 @@ function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60)
 function startClock(){if(started)return;started=true;startAt=Date.now()-state.elapsed*1000;timerId=setInterval(()=>{state.elapsed=Math.floor((Date.now()-startAt)/1000);stats();saveGame()},1000)}
 function stopClock(){clearInterval(timerId);timerId=null} function stats(){movesEl.textContent=state.moves;scoreEl.textContent=Math.max(0,500-state.moves+state.completed*100);timerEl.textContent=fmt(state.elapsed)}
 function cancelHint(msg=''){if(!hintRun)return;hintRun.cancelled=true;hintRun=null;hintCounter.hidden=true;document.querySelectorAll('.motion-stack').forEach(x=>x.remove());animating=false;if(msg)status.textContent=msg}
-function newGame(){cancelHint();stopClock();started=false;history=[];selected=null;developerGame=false;let d=deck();shuffle(d);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,completedSuits:[],elapsed:0};status.textContent=`${prefs.suits===4?'4-Suit':prefs.suits===2?'2-Suit':'1-Suit'} game. Tap a movable card or stack.`;render()}
+function newGame(){cancelHint();stopClock();started=false;history=[];selected=null;developerGame=false;let d=deck(),rng=dailyMode?seededRandom(seedFromString(`spider-${dailyDate}-${prefs.suits}`)):Math.random;shuffle(d,rng);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,completedSuits:[],elapsed:0};status.textContent=`${prefs.suits===4?'4-Suit':prefs.suits===2?'2-Suit':'1-Suit'} game. Tap a movable card or stack.`;render()}
 function movable(c,i){let a=state.cols[c];if(i<0||!a[i]?.faceUp)return false;for(let x=i;x<a.length-1;x++)if(!a[x+1].faceUp||val(a[x].rank)!==val(a[x+1].rank)+1||(prefs.suits>1&&(a[x].suit||'♠')!==(a[x+1].suit||'♠')))return false;return true}
 function legal(f,i,t){if(f===t||!movable(f,i))return false;let m=state.cols[f][i],d=state.cols[t];return !d.length||val(d[d.length-1].rank)===val(m.rank)+1}
 function flip(c){let a=state.cols[c];if(a.length&&!a[a.length-1].faceUp){a[a.length-1].faceUp=true;a[a.length-1]._justFlipped=true}}
@@ -392,7 +411,9 @@ async function post(){
    await sleep(180);
   }
  }
- if(state.completed===8&&state.stock.length===0&&state.cols.every(c=>c.length===0)){stopClock();toast('You won!');status.textContent='Game complete!';recordFinishedGame(true);render();if(!document.querySelector('.win-overlay,.celebration-stage'))celebrateWin();won=true}
+ if(state.completed===8&&state.stock.length===0&&state.cols.every(c=>c.length===0)){stopClock();toast('You won!');status.textContent='Game complete!';recordFinishedGame(true);
+ if(dailyMode&&!developerGame&&dailyDate===dateKey()){let dd=dailyData();dd.wins=dd.wins||{};dd.wins[dailyDate]={completedAt:Date.now(),suits:prefs.suits,moves:state.moves,time:state.elapsed};saveDaily(dd);toast('Daily Challenge complete!')}
+ render();if(!document.querySelector('.win-overlay,.celebration-stage'))celebrateWin();won=true}
  return won
 }
 function spacingFor(a){
@@ -590,7 +611,7 @@ render();
 flyers.forEach(f=>f.remove());
 await post();render();animating=false
 }
-function render(){if(modeLabel)modeLabel.textContent=`${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'} • ${prefs.smartTap?'Smart Tap':'Manual Tap'}`;columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');if(!card.faceUp)e.style.background=cardBackStyle(prefs.cardBack);e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.classList.add('has-index');e.innerHTML=faceHTML(card);e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>pointerUp(ev,ci,i))}col.appendChild(e)});col.addEventListener('pointerup',e=>{if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});let deals=Math.floor(state.stock.length/10);stockEl.innerHTML='';for(let i=0;i<deals;i++){let s=document.createElement('div');s.className='stock-card';s.style.background=cardBackStyle(prefs.cardBack);s.style.left=(i*10)+'px';s.style.top='2px';s.style.zIndex=i+1;stockEl.appendChild(s)}stockControl.disabled=!deals;stockControl.setAttribute('aria-label',deals?`Deal next row. ${deals} deals remaining`:'No deals remaining');completedEl.innerHTML='';for(let i=0;i<8;i++){let c=document.createElement('div');c.className=i<state.completed?'complete-card':'complete-slot';c.textContent=i<state.completed?'K'+((state.completedSuits&&state.completedSuits[i])||'♠'):'♠';completedEl.appendChild(c)}undoBtn.disabled=!history.length;stats();saveGame();setTimeout(()=>state.cols.forEach(col=>col.forEach(card=>delete card._justFlipped)),100)}
+function render(){if(modeLabel)modeLabel.textContent=dailyMode?`Daily Challenge • ${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'}`:`${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'} • ${prefs.smartTap?'Smart Tap':'Manual Tap'}`;columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');if(!card.faceUp)e.style.background=cardBackStyle(prefs.cardBack);e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.classList.add('has-index');e.innerHTML=faceHTML(card);e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>pointerUp(ev,ci,i))}col.appendChild(e)});col.addEventListener('pointerup',e=>{if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});let deals=Math.floor(state.stock.length/10);stockEl.innerHTML='';for(let i=0;i<deals;i++){let s=document.createElement('div');s.className='stock-card';s.style.background=cardBackStyle(prefs.cardBack);s.style.left=(i*10)+'px';s.style.top='2px';s.style.zIndex=i+1;stockEl.appendChild(s)}stockControl.disabled=!deals;stockControl.setAttribute('aria-label',deals?`Deal next row. ${deals} deals remaining`:'No deals remaining');completedEl.innerHTML='';for(let i=0;i<8;i++){let c=document.createElement('div');c.className=i<state.completed?'complete-card':'complete-slot';c.textContent=i<state.completed?'K'+((state.completedSuits&&state.completedSuits[i])||'♠'):'♠';completedEl.appendChild(c)}undoBtn.disabled=!history.length;stats();saveGame();setTimeout(()=>state.cols.forEach(col=>col.forEach(card=>delete card._justFlipped)),100)}
 function pointerDown(e,c,i,el){if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;if(!movable(c,i))return;pointer={id:e.pointerId,c,i,x:e.clientX,y:e.clientY,drag:false,el,h:null,dx:0,dy:0};el.setPointerCapture?.(e.pointerId);document.addEventListener('pointermove',pointerMove,{passive:false})}
 function pointerMove(e){if(!pointer||e.pointerId!==pointer.id)return;let dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.drag&&Math.hypot(dx,dy)<12)return;if(!pointer.drag){pointer.drag=true;pointer.h=motionStack(pointer.c,pointer.i);let r=pointer.el.getBoundingClientRect();pointer.dx=e.clientX-r.left;pointer.dy=e.clientY-r.top}e.preventDefault();let br=board.getBoundingClientRect();pointer.h.style.left=(e.clientX-br.left-pointer.dx)+'px';pointer.h.style.top=(e.clientY-br.top-pointer.dy)+'px';document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column');if(t&&legal(pointer.c,pointer.i,+t.dataset.col))t.classList.add('drop-target')}
 function pointerUp(e,c,i){document.removeEventListener('pointermove',pointerMove);if(!pointer)return;document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let p=pointer;pointer=null;if(p.drag){let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column'),to=t?+t.dataset.col:null;p.h?.remove();if(to!==null&&legal(p.c,p.i,to)){perform(p.c,p.i,to,'Dragged move completed.');return}render();return}prefs.smartTap?smart(c,i):manualTap(c,i)}
@@ -611,7 +632,7 @@ $('settings').onclick=()=>{cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.9.2');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.10');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
