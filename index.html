@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.6.2</title>
+<title>Spider Solitaire 1.0J.7</title>
 <style>
-:root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
+:root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
 body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .game-shell{position:relative;max-width:820px;margin:auto;min-height:calc(100dvh - 8px);overflow:hidden;border-radius:0;border:0;background:linear-gradient(160deg,var(--felt1),var(--felt2) 55%,var(--felt3));box-shadow:none}
 .topbar{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;padding:10px 12px;background:#00271af2;border-bottom:1px solid #e8c87966}
@@ -61,7 +61,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .settings-section{margin:15px 0}.settings-section h3{margin:0 0 7px;color:#efd58e;font:700 15px Georgia,serif;letter-spacing:.04em}
 .settings-row{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;padding:12px 11px;margin:6px 0;border:1px solid #ffffff22;border-radius:12px;background:#ffffff0b;color:#fff;font:inherit}
 .settings-row b{font-size:13px}.settings-row span{font-size:11px;opacity:.62}.settings-row .chev{font-size:18px;color:#efd58e;opacity:1}.settings-row:disabled{opacity:.42}
-.settings-note{font-size:11px;opacity:.55;line-height:1.4;margin:8px 2px}
+.settings-note{font-size:11px;opacity:.55;line-height:1.4;margin:8px 2px}.choice-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}.choice-card{border:2px solid #ffffff24;background:#ffffff0c;color:#fff;border-radius:13px;padding:10px;text-align:left}.choice-card.selected{border-color:#efd58e;box-shadow:0 0 0 1px #efd58e55}.felt-swatch{height:66px;border-radius:9px;margin-bottom:8px;border:1px solid #ffffff35}.choice-card b{font-size:13px}.choice-card small{display:block;opacity:.6;margin-top:3px}.cardback-swatch{height:72px;width:50px;margin:0 auto 8px;border-radius:6px;border:2px solid #e3edf7;box-shadow:0 2px 4px #0006}.toggle{position:relative;width:46px;height:27px;border-radius:14px;background:#ffffff28;flex:0 0 auto}.toggle.on{background:#d5b965}.toggle::after{content:"";position:absolute;width:21px;height:21px;left:3px;top:3px;border-radius:50%;background:#fff}.toggle.on::after{transform:translateX(19px)}
 
 
 .stats-head h2,.collection-head h2{text-align:center}.stats-close,.collection-close{min-width:42px;font-size:20px;line-height:1}</style>
@@ -77,7 +77,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.6.2</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.7</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -127,6 +127,17 @@ function recordFinishedGame(won){
  if(won){s.wins++;s.currentStreak++;s.bestStreak=Math.max(s.bestStreak,s.currentStreak);s.bestTime=s.bestTime==null?state.elapsed:Math.min(s.bestTime,state.elapsed);s.fewestMoves=s.fewestMoves==null?state.moves:Math.min(s.fewestMoves,state.moves);s.bestScore=s.bestScore==null?score:Math.max(s.bestScore,score)}else s.currentStreak=0;
  s.history.unshift({won,score,moves:state.moves,time:state.elapsed,at:Date.now()});s.history=s.history.slice(0,10);setPlayerStats(s)
 }
+const PREFS_KEY='spider-solitaire-preferences';
+const tableThemes={classic:{name:'Classic Green',felt1:'#075534',felt2:'#06462e',felt3:'#043723',shell:'#0b2018'},blue:{name:'Midnight Blue',felt1:'#164f73',felt2:'#0d3d5d',felt3:'#082d46',shell:'#0a1c29'},burgundy:{name:'Burgundy',felt1:'#713343',felt2:'#592535',felt3:'#3d1724',shell:'#261016'},charcoal:{name:'Charcoal',felt1:'#41484b',felt2:'#30383b',felt3:'#22292b',shell:'#171b1d'}};
+const cardBacks={blue:'Classic Blue',red:'Royal Red',black:'Midnight Black',green:'Emerald'};
+function defaultPrefs(){return {theme:'classic',cardBack:'blue',smartTap:true}}
+function getPrefs(){try{return Object.assign(defaultPrefs(),JSON.parse(localStorage.getItem(PREFS_KEY)||'{}'))}catch(e){return defaultPrefs()}}
+function setPrefs(x){try{localStorage.setItem(PREFS_KEY,JSON.stringify(x))}catch(e){}}
+let prefs=getPrefs();
+function applyPrefs(){let x=tableThemes[prefs.theme]||tableThemes.classic,r=document.documentElement;['felt1','felt2','felt3','shell'].forEach(k=>r.style.setProperty('--'+k,x[k]))}
+function cardBackStyle(id){return ({blue:'repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px)',red:'repeating-linear-gradient(45deg,#6d1522,#6d1522 3px,#a42b3b 3px,#a42b3b 6px)',black:'repeating-linear-gradient(45deg,#15191c,#15191c 3px,#343b40 3px,#343b40 6px)',green:'repeating-linear-gradient(45deg,#0b4c36,#0b4c36 3px,#167354 3px,#167354 6px)'})[id]||'repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px)'}
+function showTableauChooser(){document.querySelector('.settings-overlay')?.remove();let o=document.createElement('div');o.className='settings-overlay';o.innerHTML=`<div class="settings-head"><button class="nav-back">← Back</button><h2>Tableau Color</h2><button class="settings-close">×</button></div><div class="choice-grid">${Object.entries(tableThemes).map(([id,x])=>`<button class="choice-card ${prefs.theme===id?'selected':''}" data-theme="${id}"><div class="felt-swatch" style="background:linear-gradient(145deg,${x.felt1},${x.felt3})"></div><b>${x.name}</b><small>${prefs.theme===id?'Selected':'Tap to select'}</small></button>`).join('')}</div>`;board.appendChild(o);o.querySelector('.settings-close').onclick=()=>o.remove();o.querySelector('.nav-back').onclick=()=>{o.remove();showSettings()};o.querySelectorAll('[data-theme]').forEach(b=>b.onclick=()=>{prefs.theme=b.dataset.theme;setPrefs(prefs);applyPrefs();o.remove();showTableauChooser()})}
+function showCardBackChooser(){document.querySelector('.settings-overlay')?.remove();let o=document.createElement('div');o.className='settings-overlay';o.innerHTML=`<div class="settings-head"><button class="nav-back">← Back</button><h2>Card Back</h2><button class="settings-close">×</button></div><div class="choice-grid">${Object.entries(cardBacks).map(([id,name])=>`<button class="choice-card ${prefs.cardBack===id?'selected':''}" data-back="${id}"><div class="cardback-swatch" style="background:${cardBackStyle(id)}"></div><b>${name}</b><small>${prefs.cardBack===id?'Selected':'Tap to select'}</small></button>`).join('')}</div>`;board.appendChild(o);o.querySelector('.settings-close').onclick=()=>o.remove();o.querySelector('.nav-back').onclick=()=>{o.remove();showSettings()};o.querySelectorAll('[data-back]').forEach(b=>b.onclick=()=>{prefs.cardBack=b.dataset.back;setPrefs(prefs);render();o.remove();showCardBackChooser()})}
 function showSettings(){
  document.querySelector('.settings-overlay')?.remove();let o=document.createElement('div');o.className='settings-overlay';
  o.innerHTML=`<div class="settings-head"><h2>Settings</h2><button class="settings-close">×</button></div>
@@ -136,12 +147,12 @@ function showSettings(){
  </div>
  <div class="settings-section"><h3>Game</h3>
   <button class="settings-row" disabled><span><b>Number of Suits</b><br><span>1 Suit · More difficulties coming soon</span></span><span>Coming Soon</span></button>
-  <button class="settings-row" disabled><span><b>Smart Tap</b><br><span>Gameplay preference controls coming soon</span></span><span>On</span></button>
+  <button class="settings-row" data-toggle="smart"><span><b>Smart Tap</b><br><span>Tap a movable card to choose its best destination</span></span><span class="toggle ${prefs.smartTap?'on':''}"></span></button>
  </div>
  <div class="settings-section"><h3>Appearance</h3>
-  <button class="settings-row" disabled><span><b>Tableau Color</b><br><span>Choose your table theme</span></span><span>Coming Soon</span></button>
+  <button class="settings-row" data-open="tableau"><span><b>Tableau Color</b><br><span>${(tableThemes[prefs.theme]||tableThemes.classic).name}</span></span><span class="chev">›</span></button>
   <button class="settings-row" disabled><span><b>Card Design</b><br><span>Card faces and styles</span></span><span>Coming Soon</span></button>
-  <button class="settings-row" disabled><span><b>Card Back</b><br><span>Choose a card-back design</span></span><span>Coming Soon</span></button>
+  <button class="settings-row" data-open="cardback"><span><b>Card Back</b><br><span>${cardBacks[prefs.cardBack]||cardBacks.blue}</span></span><span class="chev">›</span></button>
  </div>
  <div class="settings-section"><h3>Sound & Haptics</h3>
   <button class="settings-row" disabled><span><b>Sound</b><br><span>Game sound controls</span></span><span>Coming Soon</span></button>
@@ -151,7 +162,10 @@ function showSettings(){
  board.appendChild(o);
  o.querySelector('.settings-close').onclick=()=>o.remove();
  o.querySelector('[data-open="stats"]').onclick=()=>{o.remove();showStats()};
- o.querySelector('[data-open="collection"]').onclick=()=>{o.remove();showCollection()}
+ o.querySelector('[data-open="collection"]').onclick=()=>{o.remove();showCollection()};
+ o.querySelector('[data-open="tableau"]').onclick=()=>{o.remove();showTableauChooser()};
+ o.querySelector('[data-open="cardback"]').onclick=()=>{o.remove();showCardBackChooser()};
+ o.querySelector('[data-toggle="smart"]').onclick=()=>{prefs.smartTap=!prefs.smartTap;setPrefs(prefs);o.remove();showSettings()}
 }
 function showStats(){
  document.querySelector('.stats-overlay')?.remove();let s=getPlayerStats(),pct=s.gamesPlayed?Math.round(s.wins/s.gamesPlayed*100):0,owned=getCollection().length,o=document.createElement('div');o.className='stats-overlay';
@@ -487,7 +501,7 @@ await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy
 await commit();render();h.remove();animating=false
 }
 async function perform(f,i,t,msg='Moved.'){if(animating||!legal(f,i,t))return false;cancelHint();let m={from:f,index:i,to:t};remember();startClock();await animateReal(m,async()=>{state.cols[t].push(...state.cols[f].splice(i));flip(f);state.moves++;selected=null;status.textContent=msg;await post()});return true}
-function smart(c,i){if(hintRun)cancelHint();if(animating)return;if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';return}let m=best(c,i);if(m)perform(c,i,m.to,'Smart move completed.');else{selected={col:c,index:i};status.textContent='No automatic move found. Tap a destination or drag.';render()}}
+function smart(c,i){if(hintRun)cancelHint();if(animating)return;if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';return}if(!prefs.smartTap){selected={col:c,index:i};status.textContent='Stack selected. Tap a destination or drag.';render();return}let m=best(c,i);if(m)perform(c,i,m.to,'Smart move completed.');else{selected={col:c,index:i};status.textContent='No automatic move found. Tap a destination or drag.';render()}}
 function tapDest(c){if(selected)perform(selected.col,selected.index,c,'Manual move completed.')}
 async function deal(){
 if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;
@@ -508,7 +522,7 @@ render();
 flyers.forEach(f=>f.remove());
 await post();render();animating=false
 }
-function render(){columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.innerHTML=faceHTML(card);e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>pointerUp(ev,ci,i))}col.appendChild(e)});col.addEventListener('pointerup',e=>{if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});let deals=Math.floor(state.stock.length/10);stockEl.innerHTML='';for(let i=0;i<deals;i++){let s=document.createElement('div');s.className='stock-card';s.style.left=(i*10)+'px';s.style.top='2px';s.style.zIndex=i+1;stockEl.appendChild(s)}stockControl.disabled=!deals;stockControl.setAttribute('aria-label',deals?`Deal next row. ${deals} deals remaining`:'No deals remaining');completedEl.innerHTML='';for(let i=0;i<8;i++){let c=document.createElement('div');c.className=i<state.completed?'complete-card':'complete-slot';c.textContent=i<state.completed?'K♠':'♠';completedEl.appendChild(c)}undoBtn.disabled=!history.length;stats();saveGame();setTimeout(()=>state.cols.forEach(col=>col.forEach(card=>delete card._justFlipped)),100)}
+function render(){columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');if(!card.faceUp)e.style.background=cardBackStyle(prefs.cardBack);e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.innerHTML=faceHTML(card);e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>pointerUp(ev,ci,i))}col.appendChild(e)});col.addEventListener('pointerup',e=>{if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});let deals=Math.floor(state.stock.length/10);stockEl.innerHTML='';for(let i=0;i<deals;i++){let s=document.createElement('div');s.className='stock-card';s.style.background=cardBackStyle(prefs.cardBack);s.style.left=(i*10)+'px';s.style.top='2px';s.style.zIndex=i+1;stockEl.appendChild(s)}stockControl.disabled=!deals;stockControl.setAttribute('aria-label',deals?`Deal next row. ${deals} deals remaining`:'No deals remaining');completedEl.innerHTML='';for(let i=0;i<8;i++){let c=document.createElement('div');c.className=i<state.completed?'complete-card':'complete-slot';c.textContent=i<state.completed?'K♠':'♠';completedEl.appendChild(c)}undoBtn.disabled=!history.length;stats();saveGame();setTimeout(()=>state.cols.forEach(col=>col.forEach(card=>delete card._justFlipped)),100)}
 function pointerDown(e,c,i,el){if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;if(!movable(c,i))return;pointer={id:e.pointerId,c,i,x:e.clientX,y:e.clientY,drag:false,el,h:null,dx:0,dy:0};el.setPointerCapture?.(e.pointerId);document.addEventListener('pointermove',pointerMove,{passive:false})}
 function pointerMove(e){if(!pointer||e.pointerId!==pointer.id)return;let dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.drag&&Math.hypot(dx,dy)<12)return;if(!pointer.drag){pointer.drag=true;pointer.h=motionStack(pointer.c,pointer.i);let r=pointer.el.getBoundingClientRect();pointer.dx=e.clientX-r.left;pointer.dy=e.clientY-r.top}e.preventDefault();let br=board.getBoundingClientRect();pointer.h.style.left=(e.clientX-br.left-pointer.dx)+'px';pointer.h.style.top=(e.clientY-br.top-pointer.dy)+'px';document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column');if(t&&legal(pointer.c,pointer.i,+t.dataset.col))t.classList.add('drop-target')}
 function pointerUp(e,c,i){document.removeEventListener('pointermove',pointerMove);if(!pointer)return;document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let p=pointer;pointer=null;if(p.drag){let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column'),to=t?+t.dataset.col:null;p.h?.remove();if(to!==null&&legal(p.c,p.i,to)){perform(p.c,p.i,to,'Dragged move completed.');return}render();return}smart(c,i)}
@@ -528,7 +542,7 @@ newBtn.onclick=askNew;newBottom.onclick=askNew;
 $('settings').onclick=()=>{cancelHint();showSettings()};
 
 let devPressTimer=null;
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.6.2');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.7');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
@@ -540,7 +554,7 @@ if(versionEl){
 window.addEventListener('pagehide',saveGame);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveGame()});
 try{
-  if(!restoreGame())newGame();
+  applyPrefs();if(!restoreGame())newGame();
   if(!state||state.cols.length!==10){
     throw new Error('Game state validation failed');
   }
