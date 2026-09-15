@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.6.1</title>
+<title>Spider Solitaire 1.0J.6.2</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#0b2018;color:#fff;font-family:Arial,sans-serif}
@@ -48,23 +48,23 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .win-fly{position:absolute;z-index:2800;width:38px;height:54px;border-radius:4px;background:#fff;color:#111;border:1px solid #ddd;font:700 18px Georgia,serif;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .celebration-stage{position:absolute;inset:0;z-index:2850;pointer-events:none;overflow:hidden}.party-card{position:absolute;width:38px;height:54px;border-radius:4px;background:linear-gradient(145deg,#fff,#f3efe4);color:#111;border:1px solid #ddd;box-shadow:0 3px 8px #0008;font:700 15px Georgia,serif;padding:3px;transform-origin:center}
 .unlock-badge{margin:12px auto 2px;padding:7px 10px;border:1px solid #e8c879;border-radius:999px;color:#efd58e;background:#001f16;font-weight:800;font-size:12px;width:max-content}.collection-btn{background:#ffffff12!important;color:#efd58e!important;margin-left:6px!important}
-.collection-overlay{position:absolute;inset:0;z-index:3400;background:#001d14f2;padding:20px 14px;overflow:auto}.collection-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.collection-head h2{margin:0;color:#efd58e;font:700 25px Georgia,serif}.collection-close{border:1px solid #ffffff44;background:#ffffff12;color:#fff;border-radius:10px;padding:8px 12px}
+.collection-overlay{position:absolute;inset:0;z-index:3400;background:#00291d;padding:20px 14px;overflow:auto}.collection-head{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;margin-bottom:16px}.collection-head h2{margin:0;color:#efd58e;font:700 25px Georgia,serif}.collection-close{border:1px solid #ffffff44;background:#ffffff12;color:#fff;border-radius:10px;padding:8px 12px}
 .collection-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .dev-overlay{position:absolute;inset:0;z-index:3900;background:#001d14f5;display:flex;align-items:center;justify-content:center;padding:18px}
 .dev-panel{width:min(92%,390px);background:#073b2d;border:1px solid #e8c87966;border-radius:18px;padding:18px;box-shadow:0 18px 50px #0009;color:#fff}
 .dev-panel h2{margin:0 0 4px;color:#efd58e;font:700 24px Georgia,serif}.dev-panel p{margin:0 0 14px;opacity:.75;font-size:12px;line-height:1.4}
 .dev-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.dev-grid button,.dev-close{border:1px solid #ffffff33;background:#ffffff10;color:#fff;border-radius:11px;padding:12px 8px;font-weight:800}
 .dev-grid button:active,.dev-close:active{transform:scale(.97)}.dev-close{width:100%;margin-top:12px;color:#efd58e}
-.collection-tile{min-height:118px;border:1px solid #ffffff25;border-radius:12px;background:#ffffff0c;padding:8px;text-align:center;color:#fff}.collection-tile.locked{opacity:.38;filter:grayscale(1)}.collection-icon{height:70px;display:flex;align-items:center;justify-content:center;font-size:36px}.collection-name{font-weight:800;font-size:12px;color:#efd58e}.collection-state{font-size:10px;opacity:.7;margin-top:3px}.stats-overlay{position:absolute;inset:0;z-index:3450;background:#001d14f5;padding:18px 14px;overflow:auto}.stats-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.stats-head h2{margin:0;color:#efd58e;font:700 25px Georgia,serif}.stats-close{border:1px solid #ffffff44;background:#ffffff12;color:#fff;border-radius:10px;padding:8px 12px}.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}.stats-tile{border:1px solid #ffffff22;background:#ffffff0b;border-radius:12px;padding:10px 6px;text-align:center}.stats-tile span{display:block;font-size:10px;opacity:.65}.stats-tile b{display:block;color:#efd58e;font-size:18px;margin-top:3px}.history-title{color:#efd58e;font:700 17px Georgia,serif;margin:8px 0}.history-row{display:grid;grid-template-columns:52px 1fr 1fr 1fr;gap:6px;padding:9px 7px;border-top:1px solid #ffffff18;font-size:11px}.history-row.win .result{color:#efd58e}.result{font-weight:800}.history-empty{text-align:center;opacity:.6;padding:24px 0}.stats-link{text-decoration:underline;text-underline-offset:2px}
-.settings-overlay{position:absolute;inset:0;z-index:3500;background:#001d14f7;padding:18px 14px;overflow:auto}
-.settings-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}.settings-head h2{margin:0;color:#efd58e;font:700 26px Georgia,serif}.settings-close{border:1px solid #ffffff44;background:#ffffff12;color:#fff;border-radius:10px;padding:8px 12px}
+.collection-tile{min-height:118px;border:1px solid #ffffff25;border-radius:12px;background:#ffffff0c;padding:8px;text-align:center;color:#fff}.collection-tile.locked{opacity:.38;filter:grayscale(1)}.collection-icon{height:70px;display:flex;align-items:center;justify-content:center;font-size:36px}.collection-name{font-weight:800;font-size:12px;color:#efd58e}.collection-state{font-size:10px;opacity:.7;margin-top:3px}.stats-overlay{position:absolute;inset:0;z-index:3450;background:#00291d;padding:18px 14px;overflow:auto}.stats-head{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;margin-bottom:14px}.stats-head h2{margin:0;color:#efd58e;font:700 25px Georgia,serif}.stats-close{border:1px solid #ffffff44;background:#ffffff12;color:#fff;border-radius:10px;padding:8px 12px}.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}.stats-tile{border:1px solid #ffffff38;background:#ffffff12;border-radius:12px;padding:10px 6px;text-align:center}.stats-tile span{display:block;font-size:10px;opacity:.65}.stats-tile b{display:block;color:#efd58e;font-size:18px;margin-top:3px}.history-title{color:#efd58e;font:700 17px Georgia,serif;margin:8px 0}.history-row{display:grid;grid-template-columns:52px 1fr 1fr 1fr;gap:6px;padding:9px 7px;border-top:1px solid #ffffff18;font-size:11px}.history-row.win .result{color:#efd58e}.result{font-weight:800}.history-empty{text-align:center;opacity:.6;padding:24px 0}.stats-link{text-decoration:underline;text-underline-offset:2px}
+.settings-overlay{position:absolute;inset:0;z-index:3500;background:#00291d;padding:18px 14px;overflow:auto}
+.settings-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}.settings-head h2{margin:0;color:#efd58e;font:700 26px Georgia,serif}.settings-close{border:1px solid #ffffff44;background:#ffffff12;color:#fff;border-radius:10px;padding:8px 12px}.nav-back{border:1px solid #ffffff44;background:#ffffff12;color:#fff;border-radius:10px;padding:8px 12px;font-weight:700;white-space:nowrap}
 .settings-section{margin:15px 0}.settings-section h3{margin:0 0 7px;color:#efd58e;font:700 15px Georgia,serif;letter-spacing:.04em}
 .settings-row{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;padding:12px 11px;margin:6px 0;border:1px solid #ffffff22;border-radius:12px;background:#ffffff0b;color:#fff;font:inherit}
 .settings-row b{font-size:13px}.settings-row span{font-size:11px;opacity:.62}.settings-row .chev{font-size:18px;color:#efd58e;opacity:1}.settings-row:disabled{opacity:.42}
 .settings-note{font-size:11px;opacity:.55;line-height:1.4;margin:8px 2px}
 
 
-</style>
+.stats-head h2,.collection-head h2{text-align:center}.stats-close,.collection-close{min-width:42px;font-size:20px;line-height:1}</style>
 </head>
 <body>
 <main class="game-shell">
@@ -77,7 +77,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.6.1</span></div>
+<div class="subbar"><span>1 Suit • Smart Tap</span><span>v1.0J.6.2</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -129,7 +129,7 @@ function recordFinishedGame(won){
 }
 function showSettings(){
  document.querySelector('.settings-overlay')?.remove();let o=document.createElement('div');o.className='settings-overlay';
- o.innerHTML=`<div class="settings-head"><h2>Settings</h2><button class="settings-close">Close</button></div>
+ o.innerHTML=`<div class="settings-head"><h2>Settings</h2><button class="settings-close">×</button></div>
  <div class="settings-section"><h3>Player</h3>
   <button class="settings-row" data-open="stats"><span><b>Stats & History</b><br><span>Records, streaks and recent games</span></span><span class="chev">›</span></button>
   <button class="settings-row" data-open="collection"><span><b>Celebration Collection</b><br><span>View your collected win animations</span></span><span class="chev">›</span></button>
@@ -156,7 +156,7 @@ function showSettings(){
 function showStats(){
  document.querySelector('.stats-overlay')?.remove();let s=getPlayerStats(),pct=s.gamesPlayed?Math.round(s.wins/s.gamesPlayed*100):0,owned=getCollection().length,o=document.createElement('div');o.className='stats-overlay';
  let tiles=[['Games',s.gamesPlayed],['Wins',s.wins],['Win %',pct+'%'],['Current Streak',s.currentStreak],['Best Streak',s.bestStreak],['Celebrations',owned+'/'+celebrations.length],['Fastest Win',s.bestTime==null?'—':fmt(s.bestTime)],['Fewest Moves',s.fewestMoves==null?'—':s.fewestMoves],['Best Score',s.bestScore==null?'—':s.bestScore]];
- o.innerHTML=`<div class="stats-head"><h2>Stats & History</h2><button class="stats-close">Close</button></div><div class="stats-grid">${tiles.map(x=>`<div class="stats-tile"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div><div class="history-title">Recent Games</div>${s.history.length?s.history.map(g=>`<div class="history-row ${g.won?'win':''}"><span class="result">${g.won?'WIN':'LOSS'}</span><span>${g.score} pts</span><span>${g.moves} moves</span><span>${fmt(g.time)}</span></div>`).join(''):`<div class="history-empty">No completed games yet.</div>`}`;board.appendChild(o);o.querySelector('.stats-close').onclick=()=>o.remove()
+ o.innerHTML=`<div class="stats-head"><button class="nav-back">← Back</button><h2>Stats & History</h2><button class="stats-close">×</button></div><div class="stats-grid">${tiles.map(x=>`<div class="stats-tile"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div><div class="history-title">Recent Games</div>${s.history.length?s.history.map(g=>`<div class="history-row ${g.won?'win':''}"><span class="result">${g.won?'WIN':'LOSS'}</span><span>${g.score} pts</span><span>${g.moves} moves</span><span>${fmt(g.time)}</span></div>`).join(''):`<div class="history-empty">No completed games yet.</div>`}`;board.appendChild(o);o.querySelector('.stats-close').onclick=()=>o.remove();o.querySelector('.nav-back').onclick=()=>{o.remove();showSettings()}
 }
 
 const celebrations=[{id:'spider',name:'Spider Shuffle',icon:'🕷️'},{id:'wave',name:'Royal Wave',icon:'〰️'},{id:'tower',name:'Card Tower',icon:'♠️'}];
@@ -296,8 +296,8 @@ async function playCelebration(stage,id){
 }
 function showCollection(){
  document.querySelector('.collection-overlay')?.remove();let o=document.createElement('div');o.className='collection-overlay';let owned=getCollection();
- o.innerHTML=`<div class="collection-head"><h2>Celebration Collection</h2><button class="collection-close">Close</button></div><div class="collection-grid">${celebrations.map(c=>`<div class="collection-tile ${owned.includes(c.id)?'':'locked'}"><div class="collection-icon">${owned.includes(c.id)?c.icon:'?'}</div><div class="collection-name">${owned.includes(c.id)?c.name:'Locked'}</div><div class="collection-state">${owned.includes(c.id)?'Collected':'Win to unlock'}</div></div>`).join('')}</div>`;
- board.appendChild(o);o.querySelector('.collection-close').onclick=()=>o.remove()
+ o.innerHTML=`<div class="collection-head"><button class="nav-back">← Back</button><h2>Celebration Collection</h2><button class="collection-close">×</button></div><div class="collection-grid">${celebrations.map(c=>`<div class="collection-tile ${owned.includes(c.id)?'':'locked'}"><div class="collection-icon">${owned.includes(c.id)?c.icon:'?'}</div><div class="collection-name">${owned.includes(c.id)?c.name:'Locked'}</div><div class="collection-state">${owned.includes(c.id)?'Collected':'Win to unlock'}</div></div>`).join('')}</div>`;
+ board.appendChild(o);o.querySelector('.collection-close').onclick=()=>o.remove();o.querySelector('.nav-back').onclick=()=>{o.remove();showSettings()}
 }
 async function celebrateWin(){
  stopClock();started=false;saveGame();let chosen=nextCelebration(),fresh=unlockCelebration(chosen.id);let stage=document.createElement('div');stage.className='celebration-stage';board.appendChild(stage);await playCelebration(stage,chosen.id);stage.remove();
@@ -528,7 +528,7 @@ newBtn.onclick=askNew;newBottom.onclick=askNew;
 $('settings').onclick=()=>{cancelHint();showSettings()};
 
 let devPressTimer=null;
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.6.1');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.6.2');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
