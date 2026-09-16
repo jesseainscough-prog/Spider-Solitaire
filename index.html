@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.14.0</title>
+<title>Spider Solitaire 1.0J.14.1</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -101,7 +101,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.14.0</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.14.1</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -304,31 +304,13 @@ function getPrefs(){try{return Object.assign(defaultPrefs(),JSON.parse(localStor
 function setPrefs(x){try{localStorage.setItem(PREFS_KEY,JSON.stringify(x))}catch(e){}}
 let prefs=getPrefs();
 let audioCtx=null;
-function ensureAudio(){
- if(!prefs.sound)return null;
- try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx}catch(e){return null}
-}
-function tone(freq,dur=.045,vol=.025,type='sine',delay=0){
- if(!prefs.sound)return;let a=ensureAudio();if(!a)return;let o=a.createOscillator(),g=a.createGain(),now=a.currentTime+delay;
- o.type=type;o.frequency.setValueAtTime(freq,now);g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(Math.max(.0002,vol),now+.008);g.gain.exponentialRampToValueAtTime(.0001,now+dur);
- o.connect(g);g.connect(a.destination);o.start(now);o.stop(now+dur+.02)
-}
-function sfx(kind){
- if(!prefs.sound)return;
- if(kind==='tap')tone(520,.025,.012,'sine');
- else if(kind==='move'){tone(330,.035,.018,'triangle');tone(440,.035,.012,'triangle',.025)}
- else if(kind==='flip'){tone(650,.035,.018,'triangle');tone(820,.03,.012,'triangle',.025)}
- else if(kind==='deal'){[300,360,420].forEach((f,i)=>tone(f,.045,.018,'triangle',i*.035))}
- else if(kind==='undo'){tone(440,.045,.018,'triangle');tone(300,.055,.014,'triangle',.04)}
- else if(kind==='invalid'){tone(150,.07,.022,'square');tone(120,.06,.014,'square',.055)}
- else if(kind==='complete'){[440,554,659,880].forEach((f,i)=>tone(f,.09,.028,'triangle',i*.07))}
- else if(kind==='level'){[523,659,784,1047].forEach((f,i)=>tone(f,.12,.032,'sine',i*.085))}
- else if(kind==='win'){[392,523,659,784,1047].forEach((f,i)=>tone(f,.14,.034,'triangle',i*.09))}
-}
-function haptic(kind='light'){
- if(!prefs.haptics)return;
- try{if(navigator.vibrate){let p=kind==='strong'?[35,35,55]:kind==='medium'?[22]:kind==='error'?[18,35,18]:[10];navigator.vibrate(p)}}catch(e){}
-}
+function ensureAudio(){if(!prefs.sound)return null;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx}catch(e){return null}}
+function noiseBurst(dur=.06,vol=.035,cut=1400,delay=0){if(!prefs.sound)return;let a=ensureAudio();if(!a)return;let n=Math.max(1,Math.floor(a.sampleRate*dur)),buf=a.createBuffer(1,n,a.sampleRate),d=buf.getChannelData(0);for(let i=0;i<n;i++){let env=Math.pow(1-i/n,2.2);d[i]=(Math.random()*2-1)*env}let s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain(),now=a.currentTime+delay;s.buffer=buf;f.type='bandpass';f.frequency.value=cut;f.Q.value=.55;g.gain.setValueAtTime(.0001,now);g.gain.linearRampToValueAtTime(vol,now+.006);g.gain.exponentialRampToValueAtTime(.0001,now+dur);s.connect(f);f.connect(g);g.connect(a.destination);s.start(now);s.stop(now+dur+.015)}
+function cardSlide(delay=0){noiseBurst(.075,.028,950,delay);noiseBurst(.045,.014,2200,delay+.025)}
+function cardFlick(delay=0){noiseBurst(.035,.034,2400,delay);noiseBurst(.025,.018,900,delay+.018)}
+function softChime(freq,dur=.08,vol=.014,delay=0){if(!prefs.sound)return;let a=ensureAudio();if(!a)return;let o=a.createOscillator(),g=a.createGain(),now=a.currentTime+delay;o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(.0001,now);g.gain.linearRampToValueAtTime(vol,now+.008);g.gain.exponentialRampToValueAtTime(.0001,now+dur);o.connect(g);g.connect(a.destination);o.start(now);o.stop(now+dur+.02)}
+function sfx(kind){if(!prefs.sound)return;if(kind==='move')cardSlide();else if(kind==='flip')cardFlick();else if(kind==='deal'){for(let i=0;i<5;i++)cardFlick(i*.045)}else if(kind==='undo'){cardSlide();cardFlick(.055)}else if(kind==='invalid')noiseBurst(.045,.018,420);else if(kind==='complete'){for(let i=0;i<4;i++)cardSlide(i*.045);softChime(660,.12,.012,.12)}else if(kind==='level'){softChime(523,.11,.014);softChime(659,.11,.014,.08);softChime(784,.13,.016,.16)}else if(kind==='win'){for(let i=0;i<4;i++)cardFlick(i*.045);softChime(523,.12,.014,.12);softChime(659,.12,.014,.21);softChime(784,.15,.017,.30)}}
+function haptic(kind='light'){if(!prefs.haptics)return;try{if(navigator.vibrate){let p=kind==='strong'?[35,35,55]:kind==='medium'?[22]:kind==='error'?[18,35,18]:[10];navigator.vibrate(p)}}catch(e){}}
 function feedback(kind,hap='light'){sfx(kind);haptic(hap)}
 document.addEventListener('pointerdown',()=>ensureAudio(),{passive:true});
 
@@ -390,6 +372,10 @@ function showSettings(){
  document.querySelector('.settings-overlay')?.remove();let o=document.createElement('div');o.className='settings-overlay';
  o.innerHTML=`<div class="settings-head"><h2>Settings</h2><button class="settings-close">×</button></div>
  <div class="daily-card"><h3>Daily Challenge <span class="daily-badge">${dailyChallengeInfo().completed?'Completed Today':'New Today'}</span></h3><div class="daily-meta">${dateKey()} · ${difficultyName(prefs.suits)}</div><button class="daily-btn" id="startDaily">${dailyChallengeInfo().completed?'Play Today Again':'Play Today’s Challenge'}</button></div>
+ <div class="settings-section"><h3>Sound & Haptics</h3>
+  <button class="settings-row" data-toggle="sound"><span><b>Sound Effects</b><br><span>Card and game feedback · no background music</span></span><span class="toggle ${prefs.sound?'on':''}"></span></button>
+  <button class="settings-row" data-toggle="haptics"><span><b>Haptics</b><br><span>Touch feedback when supported by your device</span></span><span class="toggle ${prefs.haptics?'on':''}"></span></button>
+ </div>
  <div class="settings-section"><h3>Player</h3>
   ${progressCardHTML()}
   <div class="settings-row" style="cursor:default"><span><b>🔥 Win Streak</b><br><span>Consecutive days with at least one win</span></span><span style="font-weight:900;color:#efd58e;font-size:18px">${winDayStreak()} day${winDayStreak()===1?'':'s'}</span></div>
@@ -405,10 +391,6 @@ function showSettings(){
   <button class="settings-row" data-open="tableau"><span><b>Tableau Color</b><br><span>${(tableThemes[prefs.theme]||tableThemes.classic).name}</span></span><span class="chev">›</span></button>
   <button class="settings-row" disabled><span><b>Card Design</b><br><span>Card faces and styles</span></span><span>Coming Soon</span></button>
   <button class="settings-row" data-open="cardback"><span><b>Card Back</b><br><span>${cardBacks[prefs.cardBack]||cardBacks.blue}</span></span><span class="chev">›</span></button>
- </div>
- <div class="settings-section"><h3>Sound & Haptics</h3>
-  <button class="settings-row" data-toggle="sound"><span><b>Sound Effects</b><br><span>Card and game feedback · no background music</span></span><span class="toggle ${prefs.sound?'on':''}"></span></button>
-  <button class="settings-row" data-toggle="haptics"><span><b>Haptics</b><br><span>Touch feedback when supported by your device</span></span><span class="toggle ${prefs.haptics?'on':''}"></span></button>
  </div>
  <div class="settings-note">More customization will be added here as Spider Solitaire grows.</div>`;
  board.appendChild(o);
@@ -427,10 +409,9 @@ function showSettings(){
  o.querySelector('[data-open="tableau"]').onclick=()=>{o.remove();showTableauChooser()};
  o.querySelector('[data-open="cardback"]').onclick=()=>{o.remove();showCardBackChooser()};
  o.querySelector('[data-toggle="smart"]').onclick=()=>{prefs.smartTap=!prefs.smartTap;setPrefs(prefs);o.remove();showSettings()};
- o.querySelector('[data-toggle="sound"]').onclick=()=>{prefs.sound=!prefs.sound;setPrefs(prefs);if(prefs.sound){ensureAudio();sfx('tap')}o.remove();showSettings()};
- o.querySelector('[data-toggle="haptics"]').onclick=()=>{prefs.haptics=!prefs.haptics;setPrefs(prefs);if(prefs.haptics)haptic('medium');o.remove();showSettings()}
+ o.querySelector('[data-toggle="sound"]').onclick=e=>{prefs.sound=!prefs.sound;setPrefs(prefs);e.currentTarget.querySelector('.toggle').classList.toggle('on',prefs.sound);if(prefs.sound){ensureAudio();cardFlick()}};
+ o.querySelector('[data-toggle="haptics"]').onclick=e=>{prefs.haptics=!prefs.haptics;setPrefs(prefs);e.currentTarget.querySelector('.toggle').classList.toggle('on',prefs.haptics);if(prefs.haptics)haptic('medium')}
 }
-document.addEventListener('click',e=>{let b=e.target.closest('button');if(!b||b.disabled)return;if(!['stockControl','undo'].includes(b.id))sfx('tap')},{passive:true});
 function showStats(){
  document.querySelector('.stats-overlay')?.remove();let s=getPlayerStats(),pct=s.gamesPlayed?Math.round(s.wins/s.gamesPlayed*100):0,owned=getCollection().length,o=document.createElement('div');o.className='stats-overlay';
  let tiles=[['Games',s.gamesPlayed],['Wins',s.wins],['Win %',pct+'%'],['Current Streak',s.currentStreak],['Best Streak',s.bestStreak],['Celebrations',owned+'/'+celebrations.length],['Fastest Win',s.bestTime==null?'—':fmt(s.bestTime)],['Fewest Moves',s.fewestMoves==null?'—':s.fewestMoves],['Best Score',s.bestScore==null?'—':s.bestScore]];
@@ -966,7 +947,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.14.0');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.14.1');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
