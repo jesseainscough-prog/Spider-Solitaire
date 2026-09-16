@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.13.0</title>
+<title>Spider Solitaire 1.0J.13.1</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -87,7 +87,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.13.0</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.13.1</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -194,6 +194,13 @@ function achievementMet(a,s,p,won){
  if(a.id==='suits25')return p.totalSuits>=25;
  return false
 }
+function previewProgressReward(won=true){
+ let p=getProgress(),before=p.webs,lines=[],base=0,targets=challengeTargets(prefs.suits);
+ if(state.completed>0){base+=state.completed;lines.push([`${state.completed} completed suit${state.completed===1?'':'s'}`,state.completed])}
+ if(won){base+=3;lines.push(['Game won',3]);let diff=prefs.suits===4?4:prefs.suits===2?2:0;if(diff){base+=diff;lines.push([`${prefs.suits}-Suit difficulty bonus`,diff])}if(state.moves<=targets.moves){base+=2;lines.push([`Move challenge · ${targets.moves} or fewer`,2])}if(state.elapsed<=targets.time){base+=2;lines.push([`Time challenge · ${fmt(targets.time)} or faster`,2])}if(dailyMode){base+=3;lines.push(['Daily Challenge',3])}}
+ let after=before+base;
+ return {before,after,earned:base,lines,unlocked:[],beforeLevel:levelInfo(before),afterLevel:levelInfo(after),preview:true}
+}
 function awardProgress(won,s){
  let p=getProgress(),before=p.webs,lines=[],base=0,targets=challengeTargets(prefs.suits);
  if(state.completed>0){base+=state.completed;lines.push([`${state.completed} completed suit${state.completed===1?'':'s'}`,state.completed])}
@@ -212,7 +219,7 @@ function awardProgress(won,s){
 let developerGame=false,pendingProgressSummary=null;
 function gameScore(){return Math.max(0,500-state.moves+state.completed*100)}
 function recordFinishedGame(won){
- if(developerGame)return null;let s=getPlayerStats(),score=gameScore();s.gamesPlayed++;
+ if(developerGame){pendingProgressSummary=won?previewProgressReward(true):null;return pendingProgressSummary}let s=getPlayerStats(),score=gameScore();s.gamesPlayed++;
  if(won){recordWinDay();s.wins++;s.currentStreak++;s.bestStreak=Math.max(s.bestStreak,s.currentStreak);s.bestTime=s.bestTime==null?state.elapsed:Math.min(s.bestTime,state.elapsed);s.fewestMoves=s.fewestMoves==null?state.moves:Math.min(s.fewestMoves,state.moves);s.bestScore=s.bestScore==null?score:Math.max(s.bestScore,score)}else s.currentStreak=0;
  s.history.unshift({won,score,moves:state.moves,time:state.elapsed,suits:prefs.suits,daily:!!dailyMode,completed:state.completed,at:Date.now()});s.history=s.history.slice(0,10);setPlayerStats(s);
  pendingProgressSummary=awardProgress(won,s);return pendingProgressSummary
@@ -256,7 +263,7 @@ function showAchievements(){
 }
 function rewardSummaryHTML(summary){
  if(!summary)return '';let b=summary.beforeLevel,a=summary.afterLevel;
- return `<div class="reward-box">${summary.lines.length?summary.lines.map(x=>`<div class="reward-line"><span>${x[0]}</span><b>+${x[1]} 🕸️</b></div>`).join(''):`<div class="reward-line"><span>No Webs earned this game</span><b>0 🕸️</b></div>`}<div class="reward-line reward-total"><span>Total earned</span><b>+${summary.earned} 🕸️</b></div></div><div class="progress-card"><div class="progress-top"><b>Level ${a.level}</b><span>🕸️ ${summary.after} Webs</span></div><div class="web-bar"><div class="web-fill reward-progress" data-pct="${a.pct}" style="width:${b.level===a.level?b.pct:0}%"></div></div><div class="progress-sub"><span>${a.into} / ${a.need} to next level</span><span>Next Level ${a.level+1}</span></div></div>${a.level>b.level?`<div class="level-up">LEVEL UP! · Level ${a.level}</div>`:''}${summary.unlocked.length?`<div class="new-achievements">🏆 Achievement Unlocked: ${summary.unlocked.map(x=>x.name).join(' · ')}</div>`:''}`
+ return `<div class="reward-box">${summary.lines.length?summary.lines.map(x=>`<div class="reward-line"><span>${x[0]}</span><b>+${x[1]} 🕸️</b></div>`).join(''):`<div class="reward-line"><span>No Webs earned this game</span><b>0 🕸️</b></div>`}<div class="reward-line reward-total"><span>Total earned</span><b>+${summary.earned} 🕸️</b></div></div><div class="progress-card"><div class="progress-top"><b>Level ${a.level}</b><span>🕸️ ${summary.after} Webs</span></div><div class="web-bar"><div class="web-fill reward-progress" data-pct="${a.pct}" style="width:${b.level===a.level?b.pct:0}%"></div></div><div class="progress-sub"><span>${a.into} / ${a.need} to next level</span><span>Next Level ${a.level+1}</span></div></div>${a.level>b.level?`<div class="level-up">LEVEL UP! · Level ${a.level}</div>`:''}${summary.unlocked.length?`<div class="new-achievements">🏆 Achievement Unlocked: ${summary.unlocked.map(x=>x.name).join(' · ')}</div>`:''}${summary.preview?`<div class="achievement-state" style="margin-top:9px">Developer preview · rewards are not saved</div>`:''}`
 }
 function showSettings(){
  document.querySelector('.settings-overlay')?.remove();let o=document.createElement('div');o.className='settings-overlay';
@@ -817,7 +824,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.13.0');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.13.1');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
