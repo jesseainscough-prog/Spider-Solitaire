@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.16.1</title>
+<title>Spider Solitaire 1.0J.16.2</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -34,6 +34,9 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 /* J.16.1 rigid movement layer; J.16.0 stationary tableau stays frozen. */
 .motion-stack.moving-rigid{pointer-events:none!important;contain:layout paint!important;isolation:isolate;filter:none!important;will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .motion-stack.moving-rigid .motion-card{filter:none!important;transition:none!important;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+
+/* J.16.2: animate the actual tableau card elements for real moves. */
+.card.real-moving{pointer-events:none!important;will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 @media(max-width:430px){.card-suit-index,.card-rank-index{top:2px;font-size:clamp(11px,3.5vw,17px)}.card-rank-index{left:2px}.card-suit-index{right:2px}}
 .card.selected{outline:3px solid var(--gold);outline-offset:-2px}.card.just-flipped,.early-flip{animation:quickFlip .24s cubic-bezier(.2,.75,.25,1);transform-origin:center center;backface-visibility:hidden;-webkit-backface-visibility:hidden;will-change:transform}@keyframes quickFlip{0%{transform:scaleX(.05)}48%{transform:scaleX(.05)}100%{transform:scaleX(1)}}
 .watermark{position:absolute;left:0;right:0;top:180px;text-align:center;font-size:145px;color:#000;opacity:.05;pointer-events:none;z-index:1}
@@ -119,7 +122,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.1</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.2</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -150,7 +153,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.1'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.2'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -948,23 +951,30 @@ async function revealCardFlip(el,card){
  el.innerHTML=faceHTML(card);el.className='card face has-index';el.style.overflow='';feedback('flip','light');
 }
 async function animateReal(m,commit){
- dismissStuckBanner();animating=true;render();
- let h=null;
+ dismissStuckBanner();animating=true;
+ let lifted=[];
  try{
-  h=motionStack(m.from,m.index);
-  let src=cardEl(m.from,m.index),sr=src.getBoundingClientRect(),br=board.getBoundingClientRect(),dest=destinationPoint(m.to),dx=Math.round(dest.x-(sr.left-br.left)),dy=Math.round(dest.y-(sr.top-br.top));
-  state.cols[m.from].slice(m.index).forEach((_,n)=>{let e=cardEl(m.from,m.index+n);if(e)e.style.visibility='hidden'});
-  let underIndex=m.index-1,under=underIndex>=0?state.cols[m.from][underIndex]:null,underEl=underIndex>=0?cardEl(m.from,underIndex):null;
-  let revealPromise=null;
-  if(under&&!under.faceUp&&underEl){under.faceUp=true;revealPromise=revealCardFlip(underEl,under)}
-  await h.animate([{transform:'translate3d(0,0,0)'},{transform:`translate3d(${dx}px,${dy}px,0)`}],{duration:190,easing:'cubic-bezier(.22,.78,.22,1)',fill:'forwards'}).finished.catch(()=>{});
-  h.getAnimations().forEach(a=>a.cancel());h.remove();h=null;
-  if(revealPromise)await revealPromise;
+  render();
+  const moving=state.cols[m.from].slice(m.index).map((_,n)=>cardEl(m.from,m.index+n)).filter(Boolean);
+  if(!moving.length){await commit();return}
+  const br=board.getBoundingClientRect(),rects=moving.map(e=>e.getBoundingClientRect()),first=rects[0],dest=destinationPoint(m.to);
+  const dx=Math.round(dest.x-(first.left-br.left)),dy=Math.round(dest.y-(first.top-br.top));
+  moving.forEach((e,n)=>{
+   let r=rects[n],marker=document.createComment('moving-card');
+   e.parentNode.insertBefore(marker,e);
+   e.classList.add('real-moving');
+   e.style.position='fixed';e.style.left=Math.round(r.left)+'px';e.style.top=Math.round(r.top)+'px';
+   e.style.width=Math.round(r.width)+'px';e.style.height=Math.round(r.height)+'px';e.style.margin='0';e.style.zIndex=1800+n;
+   document.body.appendChild(e);lifted.push({e,marker});
+  });
+  const animations=lifted.map(({e})=>e.animate([{transform:'translate3d(0,0,0)'},{transform:`translate3d(${dx}px,${dy}px,0)`}],{duration:190,easing:'cubic-bezier(.22,.78,.22,1)',fill:'forwards'}));
+  await Promise.all(animations.map(a=>a.finished.catch(()=>{})));
+  lifted.forEach(({e,marker})=>{e.getAnimations().forEach(a=>a.cancel());marker.parentNode.insertBefore(e,marker);marker.remove();e.classList.remove('real-moving');e.removeAttribute('style')});
+  lifted=[];
   await commit();
  }finally{
-  h?.remove();
-  animating=false;
-  render();
+  lifted.forEach(({e,marker})=>{try{e.getAnimations().forEach(a=>a.cancel());if(marker.parentNode){marker.parentNode.insertBefore(e,marker);marker.remove()}e.classList.remove('real-moving');e.removeAttribute('style')}catch(_){}});
+  animating=false;render();
  }
 }
 async function perform(f,i,t,msg='Moved.'){if(animating||!legal(f,i,t))return false;cancelHint();let m={from:f,index:i,to:t};let moved=state.cols[f].slice(i),sameSuit=moved.length&&moved.every(c=>(c.suit||'♠')===(moved[0].suit||'♠'));remember();if(sameSuit)state.maxSameSuitStackMoved=Math.max(state.maxSameSuitStackMoved||0,moved.length);startClock();await animateReal(m,async()=>{state.cols[t].push(...state.cols[f].splice(i));flip(f);state.moves++;selected=null;status.textContent=msg;feedback('move','light');await post()});return true}
@@ -1034,7 +1044,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.1');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.2');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
