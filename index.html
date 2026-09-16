@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.16.0</title>
+<title>Spider Solitaire 1.0J.16.1</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -30,6 +30,10 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .card.face.run-muted{filter:brightness(.72) saturate(.68);color:#3b3b3b}
 .card.face.run-muted .card-rank-index,.card.face.run-muted .card-suit-index{opacity:.78}
 .card.face.run-active{filter:none}
+
+/* J.16.1 rigid movement layer; J.16.0 stationary tableau stays frozen. */
+.motion-stack.moving-rigid{pointer-events:none!important;contain:layout paint!important;isolation:isolate;filter:none!important;will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.motion-stack.moving-rigid .motion-card{filter:none!important;transition:none!important;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 @media(max-width:430px){.card-suit-index,.card-rank-index{top:2px;font-size:clamp(11px,3.5vw,17px)}.card-rank-index{left:2px}.card-suit-index{right:2px}}
 .card.selected{outline:3px solid var(--gold);outline-offset:-2px}.card.just-flipped,.early-flip{animation:quickFlip .24s cubic-bezier(.2,.75,.25,1);transform-origin:center center;backface-visibility:hidden;-webkit-backface-visibility:hidden;will-change:transform}@keyframes quickFlip{0%{transform:scaleX(.05)}48%{transform:scaleX(.05)}100%{transform:scaleX(1)}}
 .watermark{position:absolute;left:0;right:0;top:180px;text-align:center;font-size:145px;color:#000;opacity:.05;pointer-events:none;z-index:1}
@@ -115,7 +119,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.0</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.1</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -146,7 +150,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.0'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.1'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -871,7 +875,7 @@ function best(f,i){
 function cardEl(c,i){return columnsEl.querySelector(`.card[data-col="${c}"][data-index="${i}"]`)}
 function colEl(c){return columnsEl.querySelector(`.column[data-col="${c}"]`)}
 function destinationPoint(to){let col=colEl(to),r=col.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[to],ys=offsets(cards);let y=cards.length?ys[cards.length-1]+27:0;return{x:r.left-br.left,y:r.top-br.top+y}}
-function motionStack(from,index,hint=false){let el=cardEl(from,index),cr=el.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[from].slice(index),h=document.createElement('div');h.className='motion-stack'+(hint?' hinting':'');h.style.width=Math.round(cr.width)+'px';h.style.contain='layout paint';let msp=spacingFor(cards).up;h.style.height=(cr.height+(cards.length-1)*msp)+'px';h.style.left=Math.round(cr.left-br.left)+'px';h.style.top=Math.round(cr.top-br.top)+'px';cards.forEach((c,n)=>{let d=document.createElement('div');d.className='motion-card';d.style.top=(n*msp)+'px';d.innerHTML=faceHTML(c);h.appendChild(d)});board.appendChild(h);return h}
+function motionStack(from,index,hint=false){let el=cardEl(from,index),cr=el.getBoundingClientRect(),br=board.getBoundingClientRect(),cards=state.cols[from].slice(index),h=document.createElement('div');h.className='motion-stack moving-rigid'+(hint?' hinting':'');h.style.width=Math.round(cr.width)+'px';h.style.contain='layout paint';let msp=spacingFor(cards).up;h.style.height=(cr.height+(cards.length-1)*msp)+'px';h.style.left=Math.round(cr.left-br.left)+'px';h.style.top=Math.round(cr.top-br.top)+'px';cards.forEach((c,n)=>{let d=document.createElement('div');d.className='motion-card';d.style.top=(n*msp)+'px';d.innerHTML=faceHTML(c);h.appendChild(d)});board.appendChild(h);return h}
 async function animatePreview(m,run,num,total){
  if(run.cancelled)return;
  render();
@@ -953,8 +957,8 @@ async function animateReal(m,commit){
   let underIndex=m.index-1,under=underIndex>=0?state.cols[m.from][underIndex]:null,underEl=underIndex>=0?cardEl(m.from,underIndex):null;
   let revealPromise=null;
   if(under&&!under.faceUp&&underEl){under.faceUp=true;revealPromise=revealCardFlip(underEl,under)}
-  await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:160,easing:'cubic-bezier(.2,.85,.25,1)',fill:'forwards'}).finished.catch(()=>{});
-  h.remove();h=null;
+  await h.animate([{transform:'translate3d(0,0,0)'},{transform:`translate3d(${dx}px,${dy}px,0)`}],{duration:190,easing:'cubic-bezier(.22,.78,.22,1)',fill:'forwards'}).finished.catch(()=>{});
+  h.getAnimations().forEach(a=>a.cancel());h.remove();h=null;
   if(revealPromise)await revealPromise;
   await commit();
  }finally{
@@ -1030,7 +1034,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.0');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.1');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
