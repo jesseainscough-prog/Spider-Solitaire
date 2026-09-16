@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.16.2</title>
+<title>Spider Solitaire 1.0J.16.3</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -37,6 +37,9 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 
 /* J.16.2: animate the actual tableau card elements for real moves. */
 .card.real-moving{pointer-events:none!important;will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+/* J.16.3 invalid-card feedback. */
+.card.invalid-jiggle{z-index:1900!important;animation:invalidCardJiggle 180ms ease-out}
+@keyframes invalidCardJiggle{0%,100%{transform:translateX(0)}22%{transform:translateX(-4px)}48%{transform:translateX(4px)}72%{transform:translateX(-2px)}88%{transform:translateX(2px)}}
 @media(max-width:430px){.card-suit-index,.card-rank-index{top:2px;font-size:clamp(11px,3.5vw,17px)}.card-rank-index{left:2px}.card-suit-index{right:2px}}
 .card.selected{outline:3px solid var(--gold);outline-offset:-2px}.card.just-flipped,.early-flip{animation:quickFlip .24s cubic-bezier(.2,.75,.25,1);transform-origin:center center;backface-visibility:hidden;-webkit-backface-visibility:hidden;will-change:transform}@keyframes quickFlip{0%{transform:scaleX(.05)}48%{transform:scaleX(.05)}100%{transform:scaleX(1)}}
 .watermark{position:absolute;left:0;right:0;top:180px;text-align:center;font-size:145px;color:#000;opacity:.05;pointer-events:none;z-index:1}
@@ -122,7 +125,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.2</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.3</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -153,7 +156,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.2'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.3'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -349,6 +352,11 @@ function sfx(kind){if(!prefs.sound)return;if(kind==='move')cardSlide();else if(k
 function haptic(kind='light'){if(!prefs.haptics)return;try{if(navigator.vibrate){let p=kind==='strong'?[35,35,55]:kind==='medium'?[22]:kind==='error'?[18,35,18]:[10];navigator.vibrate(p)}}catch(e){}}
 function feedback(kind,hap='light'){sfx(kind);haptic(hap)}
 document.addEventListener('pointerdown',()=>ensureAudio(true),{passive:true});
+function invalidCardJiggle(c,i){
+ let el=cardEl(c,i);if(!el){feedback('invalid','error');return}
+ el.classList.remove('invalid-jiggle');void el.offsetWidth;el.classList.add('invalid-jiggle');
+ feedback('invalid','error');setTimeout(()=>el.classList.remove('invalid-jiggle'),190)
+}
 
 function applyPrefs(){let x=tableThemes[prefs.theme]||tableThemes.classic,r=document.documentElement;['felt1','felt2','felt3','shell'].forEach(k=>r.style.setProperty('--'+k,x[k]))}
 function cardBackStyle(id){return ({blue:'repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px)',red:'repeating-linear-gradient(45deg,#6d1522,#6d1522 3px,#a42b3b 3px,#a42b3b 6px)',black:'repeating-linear-gradient(45deg,#15191c,#15191c 3px,#343b40 3px,#343b40 6px)',green:'repeating-linear-gradient(45deg,#0b4c36,#0b4c36 3px,#167354 3px,#167354 6px)'})[id]||'repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px)'}
@@ -984,10 +992,10 @@ function manualTap(c,i){
    if(selected.col===c&&selected.index===i){selected=null;status.textContent='Selection cleared.';render();return}
    if(legal(selected.col,selected.index,c)){perform(selected.col,selected.index,c,'Move completed.');return}
  }
- if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';feedback('invalid','error');return}
+ if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';invalidCardJiggle(c,i);return}
  selected={col:c,index:i};status.textContent='Stack selected. Tap a destination or drag.';render()
 }
-function smart(c,i){if(hintRun)cancelHint();if(animating)return;if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';feedback('invalid','error');return}if(!prefs.smartTap){selected={col:c,index:i};status.textContent='Stack selected. Tap a destination or drag.';render();return}let m=best(c,i);if(m)perform(c,i,m.to,'Smart move completed.');else{selected={col:c,index:i};status.textContent='No automatic move found. Tap a destination or drag.';render()}}
+function smart(c,i){if(hintRun)cancelHint();if(animating)return;if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';invalidCardJiggle(c,i);return}if(!prefs.smartTap){selected={col:c,index:i};status.textContent='Stack selected. Tap a destination or drag.';render();return}let m=best(c,i);if(m)perform(c,i,m.to,'Smart move completed.');else{selected={col:c,index:i};status.textContent='No automatic move found. Tap a destination or drag.';render()}}
 function tapDest(c){if(selected)perform(selected.col,selected.index,c,'Manual move completed.')}
 async function deal(){
 dismissStuckBanner();
@@ -1024,9 +1032,9 @@ function activeRunStart(cards){
  return i;
 }
 function render(){if(modeLabel)modeLabel.textContent=dailyMode?`Daily Challenge • ${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'}`:`${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'} • ${prefs.smartTap?'Smart Tap':'Manual Tap'}`;columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards),runStart=activeRunStart(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');if(!card.faceUp)e.style.background=cardBackStyle(prefs.cardBack);e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.classList.add('has-index');e.classList.add(i>=runStart?'run-active':'run-muted');e.innerHTML=faceHTML(card);if(i<cards.length-1)e.classList.add('covered');else e.classList.remove('covered');e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>pointerUp(ev,ci,i))}col.appendChild(e)});col.addEventListener('pointerup',e=>{resetInactivity();if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});let deals=Math.floor(state.stock.length/10);stockEl.innerHTML='';for(let i=0;i<deals;i++){let s=document.createElement('div');s.className='stock-card';s.style.background=cardBackStyle(prefs.cardBack);s.style.left=(i*10)+'px';s.style.top='2px';s.style.zIndex=i+1;stockEl.appendChild(s)}stockControl.disabled=!deals;stockControl.setAttribute('aria-label',deals?`Deal next row. ${deals} deals remaining`:'No deals remaining');completedEl.innerHTML='';for(let i=0;i<8;i++){let c=document.createElement('div');c.className=i<state.completed?'complete-card':'complete-slot';c.textContent=i<state.completed?'K'+((state.completedSuits&&state.completedSuits[i])||'♠'):'♠';completedEl.appendChild(c)}undoBtn.disabled=!history.length;stats();saveGame();setTimeout(()=>state.cols.forEach(col=>col.forEach(card=>delete card._justFlipped)),100)}
-function pointerDown(e,c,i,el){resetInactivity();if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;if(!movable(c,i))return;pointer={id:e.pointerId,c,i,x:e.clientX,y:e.clientY,drag:false,el,h:null,dx:0,dy:0};el.setPointerCapture?.(e.pointerId);document.addEventListener('pointermove',pointerMove,{passive:false})}
+function pointerDown(e,c,i,el){resetInactivity();if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;if(!movable(c,i)){pointer={id:e.pointerId,c,i,x:e.clientX,y:e.clientY,drag:false,el,h:null,dx:0,dy:0,invalid:true};return}pointer={id:e.pointerId,c,i,x:e.clientX,y:e.clientY,drag:false,el,h:null,dx:0,dy:0};el.setPointerCapture?.(e.pointerId);document.addEventListener('pointermove',pointerMove,{passive:false})}
 function pointerMove(e){if(!pointer||e.pointerId!==pointer.id)return;let dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.drag&&Math.hypot(dx,dy)<12)return;if(!pointer.drag){pointer.drag=true;pointer.h=motionStack(pointer.c,pointer.i);let r=pointer.el.getBoundingClientRect();pointer.dx=e.clientX-r.left;pointer.dy=e.clientY-r.top}e.preventDefault();let br=board.getBoundingClientRect();pointer.h.style.left=(e.clientX-br.left-pointer.dx)+'px';pointer.h.style.top=(e.clientY-br.top-pointer.dy)+'px';document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column');if(t&&legal(pointer.c,pointer.i,+t.dataset.col))t.classList.add('drop-target')}
-function pointerUp(e,c,i){document.removeEventListener('pointermove',pointerMove);if(!pointer)return;document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let p=pointer;pointer=null;if(p.drag){let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column'),to=t?+t.dataset.col:null;p.h?.remove();if(to!==null&&legal(p.c,p.i,to)){perform(p.c,p.i,to,'Dragged move completed.');return}feedback('invalid','error');render();return}prefs.smartTap?smart(c,i):manualTap(c,i)}
+function pointerUp(e,c,i){document.removeEventListener('pointermove',pointerMove);if(!pointer)return;document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let p=pointer;pointer=null;if(p.invalid){invalidCardJiggle(c,i);return}if(p.drag){let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column'),to=t?+t.dataset.col:null;p.h?.remove();if(to!==null&&legal(p.c,p.i,to)){perform(p.c,p.i,to,'Dragged move completed.');return}feedback('invalid','error');render();return}prefs.smartTap?smart(c,i):manualTap(c,i)}
 async function undo(){metric('undos');trackEvent('undo_requested');
 if(hintRun)cancelHint('Hint tour stopped.');if(animating||!history.length)return;
 const previous=history[history.length-1],current=copy();animating=true;selected=null;let found=null;
@@ -1044,7 +1052,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.2');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.3');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
