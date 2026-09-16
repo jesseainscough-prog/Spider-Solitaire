@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.16.8</title>
+<title>Spider Solitaire 1.0J.16.9</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -123,7 +123,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.8</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.9</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -154,7 +154,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.8'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.9'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -350,26 +350,7 @@ function sfx(kind){if(!prefs.sound)return;if(kind==='move')cardSlide();else if(k
 function haptic(kind='light'){if(!prefs.haptics)return;try{if(navigator.vibrate){let p=kind==='strong'?[35,35,55]:kind==='medium'?[22]:kind==='error'?[18,35,18]:[10];navigator.vibrate(p)}}catch(e){}}
 function feedback(kind,hap='light'){sfx(kind);haptic(hap)}
 document.addEventListener('pointerdown',()=>ensureAudio(true),{passive:true});
-function invalidTouchDiagnostic(el){
- let d=document.getElementById('invalid-touch-diagnostic');
- if(!d){
-  d=document.createElement('div');d.id='invalid-touch-diagnostic';
-  d.style.cssText='position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:99999;background:#ffea00;color:#111;border:4px solid #ff2b2b;border-radius:12px;padding:12px 18px;font:bold 18px Arial,sans-serif;box-shadow:0 4px 18px #000;text-align:center;pointer-events:none';
-  document.body.appendChild(d);
- }
- d.textContent='INVALID TOUCH DETECTED';
- d.hidden=false;
- clearTimeout(invalidTouchDiagnostic.timer);
- invalidTouchDiagnostic.timer=setTimeout(()=>{d.hidden=true},700);
- if(el){
-  let oldOutline=el.style.outline,oldShadow=el.style.boxShadow;
-  el.style.outline='5px solid #ffea00';
-  el.style.boxShadow='0 0 0 6px #ff2b2b,0 0 24px 10px #ffea00';
-  setTimeout(()=>{el.style.outline=oldOutline;el.style.boxShadow=oldShadow},700);
- }
-}
 function invalidCardJiggle(el){
- invalidTouchDiagnostic(el);
  if(!el){feedback('invalid','error');return}
  el.getAnimations().forEach(a=>a.cancel());
  let oldZ=el.style.zIndex;
@@ -377,13 +358,12 @@ function invalidCardJiggle(el){
  feedback('invalid','error');
  let a=el.animate([
   {transform:'translate3d(0,0,0)'},
-  {transform:'translate3d(-10px,0,0)'},
-  {transform:'translate3d(10px,0,0)'},
-  {transform:'translate3d(-8px,0,0)'},
+  {transform:'translate3d(-7px,0,0)'},
   {transform:'translate3d(7px,0,0)'},
-  {transform:'translate3d(-4px,0,0)'},
+  {transform:'translate3d(-5px,0,0)'},
+  {transform:'translate3d(4px,0,0)'},
   {transform:'translate3d(0,0,0)'}
- ],{duration:260,easing:'ease-out'});
+ ],{duration:220,easing:'ease-out'});
  a.finished.catch(()=>{}).finally(()=>{el.style.zIndex=oldZ})
 }
 
@@ -1061,30 +1041,20 @@ function activeRunStart(cards){
  return i;
 }
 function render(){if(modeLabel)modeLabel.textContent=dailyMode?`Daily Challenge • ${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'}`:`${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'} • ${prefs.smartTap?'Smart Tap':'Manual Tap'}`;columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards),runStart=activeRunStart(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');if(!card.faceUp)e.style.background=cardBackStyle(prefs.cardBack);e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.classList.add('has-index');e.classList.add(i>=runStart?'run-active':'run-muted');e.innerHTML=faceHTML(card);if(i<cards.length-1)e.classList.add('covered');else e.classList.remove('covered');e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>pointerUp(ev,ci,i))}col.appendChild(e)});col.addEventListener('pointerup',e=>{resetInactivity();if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});let deals=Math.floor(state.stock.length/10);stockEl.innerHTML='';for(let i=0;i<deals;i++){let s=document.createElement('div');s.className='stock-card';s.style.background=cardBackStyle(prefs.cardBack);s.style.left=(i*10)+'px';s.style.top='2px';s.style.zIndex=i+1;stockEl.appendChild(s)}stockControl.disabled=!deals;stockControl.setAttribute('aria-label',deals?`Deal next row. ${deals} deals remaining`:'No deals remaining');completedEl.innerHTML='';for(let i=0;i<8;i++){let c=document.createElement('div');c.className=i<state.completed?'complete-card':'complete-slot';c.textContent=i<state.completed?'K'+((state.completedSuits&&state.completedSuits[i])||'♠'):'♠';completedEl.appendChild(c)}undoBtn.disabled=!history.length;stats();saveGame();setTimeout(()=>state.cols.forEach(col=>col.forEach(card=>delete card._justFlipped)),100)}
-function cardTouchDiagnostic(c,i,el){
- let d=document.getElementById('card-touch-diagnostic');
- if(!d){
-  d=document.createElement('div');d.id='card-touch-diagnostic';
-  d.style.cssText='position:fixed;left:50%;top:34%;transform:translate(-50%,-50%);z-index:100000;background:#00ffff;color:#001014;border:4px solid #fff;border-radius:12px;padding:12px 16px;font:bold 17px Arial,sans-serif;box-shadow:0 4px 20px #000;text-align:center;pointer-events:none;min-width:250px';
-  document.body.appendChild(d);
- }
- d.textContent='CARD TOUCH — column '+(c+1)+', card '+(i+1);
- d.hidden=false;
- clearTimeout(cardTouchDiagnostic.timer);
- cardTouchDiagnostic.timer=setTimeout(()=>{d.hidden=true},900);
- if(el){
-  let old=el.style.outline;
-  el.style.outline='5px solid #00ffff';
-  setTimeout(()=>{el.style.outline=old},900);
- }
-}
 function pointerDown(e,c,i,el){
- cardTouchDiagnostic(c,i,el);
  resetInactivity();
  if(hintRun)cancelHint('Hint tour stopped.');
  if(animating)return;
  if(!movable(c,i)){
-  invalidTouchDiagnostic(el);
+  invalidCardJiggle(el);
+  pointer=null;
+  return;
+ }
+ let hasDestination=false;
+ for(let to=0;to<10;to++){
+  if(to!==c&&legal(c,i,to)){hasDestination=true;break}
+ }
+ if(!hasDestination){
   invalidCardJiggle(el);
   pointer=null;
   return;
@@ -1112,7 +1082,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.8');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.9');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
