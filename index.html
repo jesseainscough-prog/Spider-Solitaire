@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.16.5</title>
+<title>Spider Solitaire 1.0J.16.6</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -123,7 +123,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.5</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.6</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -154,7 +154,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.5'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.6'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -350,20 +350,22 @@ function sfx(kind){if(!prefs.sound)return;if(kind==='move')cardSlide();else if(k
 function haptic(kind='light'){if(!prefs.haptics)return;try{if(navigator.vibrate){let p=kind==='strong'?[35,35,55]:kind==='medium'?[22]:kind==='error'?[18,35,18]:[10];navigator.vibrate(p)}}catch(e){}}
 function feedback(kind,hap='light'){sfx(kind);haptic(hap)}
 document.addEventListener('pointerdown',()=>ensureAudio(true),{passive:true});
-function invalidCardJiggle(c,i){
- let el=cardEl(c,i);if(!el){feedback('invalid','error');return}
+function invalidCardJiggle(el){
+ if(!el){feedback('invalid','error');return}
  el.getAnimations().forEach(a=>a.cancel());
+ let oldZ=el.style.zIndex;
  el.style.zIndex='1900';
  feedback('invalid','error');
  let a=el.animate([
   {transform:'translate3d(0,0,0)'},
-  {transform:'translate3d(-6px,0,0)'},
-  {transform:'translate3d(6px,0,0)'},
+  {transform:'translate3d(-10px,0,0)'},
+  {transform:'translate3d(10px,0,0)'},
+  {transform:'translate3d(-8px,0,0)'},
+  {transform:'translate3d(7px,0,0)'},
   {transform:'translate3d(-4px,0,0)'},
-  {transform:'translate3d(3px,0,0)'},
   {transform:'translate3d(0,0,0)'}
- ],{duration:220,easing:'ease-out'});
- a.finished.catch(()=>{}).finally(()=>{el.style.zIndex=''})
+ ],{duration:260,easing:'ease-out'});
+ a.finished.catch(()=>{}).finally(()=>{el.style.zIndex=oldZ})
 }
 
 function applyPrefs(){let x=tableThemes[prefs.theme]||tableThemes.classic,r=document.documentElement;['felt1','felt2','felt3','shell'].forEach(k=>r.style.setProperty('--'+k,x[k]))}
@@ -1000,10 +1002,10 @@ function manualTap(c,i){
    if(selected.col===c&&selected.index===i){selected=null;status.textContent='Selection cleared.';render();return}
    if(legal(selected.col,selected.index,c)){perform(selected.col,selected.index,c,'Move completed.');return}
  }
- if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';invalidCardJiggle(c,i);return}
+ if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';invalidCardJiggle(cardEl(c,i));return}
  selected={col:c,index:i};status.textContent='Stack selected. Tap a destination or drag.';render()
 }
-function smart(c,i){if(hintRun)cancelHint();if(animating)return;if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';invalidCardJiggle(c,i);return}if(!prefs.smartTap){selected={col:c,index:i};status.textContent='Stack selected. Tap a destination or drag.';render();return}let m=best(c,i);if(m)perform(c,i,m.to,'Smart move completed.');else{selected={col:c,index:i};status.textContent='No automatic move found. Tap a destination or drag.';render()}}
+function smart(c,i){if(hintRun)cancelHint();if(animating)return;if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';invalidCardJiggle(cardEl(c,i));return}if(!prefs.smartTap){selected={col:c,index:i};status.textContent='Stack selected. Tap a destination or drag.';render();return}let m=best(c,i);if(m)perform(c,i,m.to,'Smart move completed.');else{selected={col:c,index:i};status.textContent='No automatic move found. Tap a destination or drag.';render()}}
 function tapDest(c){if(selected)perform(selected.col,selected.index,c,'Manual move completed.')}
 async function deal(){
 dismissStuckBanner();
@@ -1045,7 +1047,7 @@ function pointerDown(e,c,i,el){
  if(hintRun)cancelHint('Hint tour stopped.');
  if(animating)return;
  if(!movable(c,i)){
-  invalidCardJiggle(c,i);
+  invalidCardJiggle(el);
   pointer=null;
   return;
  }
@@ -1072,7 +1074,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.5');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.6');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
