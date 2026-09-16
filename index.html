@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.13.1</title>
+<title>Spider Solitaire 1.0J.13.2</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -62,7 +62,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .progress-top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}.progress-top b{color:#efd58e;font:700 18px Georgia,serif}.progress-top span{font-size:12px;font-weight:800;color:#efd58e}
 .web-bar{height:12px;margin-top:9px;border-radius:999px;background:#001b13;border:1px solid #ffffff26;overflow:hidden}.web-fill{height:100%;width:0;background:linear-gradient(90deg,#b98d35,#efd58e);border-radius:999px;transition:width .9s cubic-bezier(.2,.8,.25,1)}
 .progress-sub{display:flex;justify-content:space-between;margin-top:6px;font-size:10px;opacity:.68}.web-total{font-weight:900;color:#efd58e}
-.achievement-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;padding-bottom:18px}.achievement-card{min-height:112px;padding:12px;border:1px solid #ffffff28;border-radius:13px;background:#ffffff0b}.achievement-card.unlocked{border-color:#e8c87988;background:#e8c87910}.achievement-icon{font-size:25px}.achievement-card h3{margin:5px 0 3px;color:#efd58e;font:700 15px Georgia,serif}.achievement-card p{margin:0;font-size:10px;line-height:1.35;opacity:.72}.achievement-reward{margin-top:7px;font-size:11px;font-weight:900;color:#efd58e}.achievement-state{font-size:9px;opacity:.55;margin-top:3px}
+.achievement-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;padding-bottom:18px}.achievement-card{min-height:112px;padding:12px;border:1px solid #ffffff28;border-radius:13px;background:#ffffff0b}.achievement-card.unlocked{border-color:#e8c87988;background:#e8c87910}.achievement-icon{font-size:25px}.achievement-card h3{margin:5px 0 3px;color:#efd58e;font:700 14px/1.08 Georgia,serif;letter-spacing:-.15px}.achievement-card p{margin:0;font-size:10px;line-height:1.35;opacity:.72}.achievement-reward{margin-top:7px;font-size:11px;font-weight:900;color:#efd58e}.achievement-state{font-size:9px;opacity:.55;margin-top:3px}
 .reward-box{margin:12px 0;padding:11px;border:1px solid #e8c87955;border-radius:13px;background:#001f16}.reward-line{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:12px}.reward-line b{color:#efd58e}.reward-total{border-top:1px solid #ffffff22;margin-top:5px;padding-top:8px;font-weight:900}
 .level-up{margin:10px 0;padding:8px;border-radius:999px;background:#e8c87922;border:1px solid #e8c879;color:#efd58e;font-weight:900}
 .new-achievements{margin:10px 0;font-size:11px;color:#efd58e;font-weight:800;line-height:1.5}
@@ -87,7 +87,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.13.1</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.13.2</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -416,6 +416,22 @@ function devNoMovesTest(withStock){
  render();startClock();saveGame();resetInactivity()
 }
 
+function devRealProgressTest(){
+ cancelHint();clearTimeout(inactivityTimer);
+ let p=getProgress(),before=p.webs,beforeLevel=levelInfo(before),lines=[],earned=0,unlocked=[];
+ const add=(label,n)=>{earned+=n;lines.push([label,n])};
+ add('Test game won',3);add('Test completed suits',8);add('Test move challenge',2);add('Test time challenge',2);
+ let a=ACHIEVEMENTS.find(x=>x.id==='first-win');
+ if(a&&!p.achievements[a.id]){p.achievements[a.id]=Date.now();add(`Achievement · ${a.name}`,a.reward);unlocked.push(a)}
+ p.webs+=earned;p.totalSuits=(p.totalSuits||0)+8;setProgress(p);
+ let summary={before,after:p.webs,earned,lines,unlocked,beforeLevel,afterLevel:levelInfo(p.webs)};
+ let o=document.createElement('div');o.className='win-overlay';o.innerHTML=`<div class="win-panel"><h2>Saved Reward Test</h2>${rewardSummaryHTML(summary)}<p>These test rewards were saved. Close/reopen the app or open Achievements to verify persistence.</p><button id="closeRealProgress">Close</button><button id="openRealAchievements" class="collection-btn">Achievements</button></div>`;board.appendChild(o);requestAnimationFrame(()=>requestAnimationFrame(()=>{let f=o.querySelector('.reward-progress');if(f)f.style.width=(+f.dataset.pct||0)+'%'}));o.querySelector('#closeRealProgress').onclick=()=>{o.remove();resetInactivity()};o.querySelector('#openRealAchievements').onclick=()=>{o.remove();showAchievements()}
+}
+function devResetProgression(){
+ if(!confirm('Reset all Webs, levels and achievements? This does not reset game stats or celebration collection.'))return;
+ try{localStorage.removeItem(PROGRESS_KEY)}catch(e){}
+ status.textContent='Developer: Webs, levels and achievements reset.';toast('Progression reset');document.querySelector('.dev-overlay')?.remove();resetInactivity()
+}
 function devProgressTest(){
  developerGame=true;developerStuckTest=false;cancelHint();clearTimeout(inactivityTimer);
  let p=getProgress(),before=p.webs,b=levelInfo(before),after=before+14,a=levelInfo(after);
@@ -429,7 +445,7 @@ function showDeveloper(){
  <div class="dev-grid">
  <button data-dev="near">Near Win</button><button data-dev="win">Instant Win</button>
  <button data-dev="complete">Test Completed Suit</button><button data-dev="stuck-stock">No Moves · Stock Available</button>
- <button data-dev="stuck-empty">No Moves · Stock Empty</button><button data-dev="progress">Test Progress Reward</button><button data-dev="achievements">Open Achievements</button><button data-dev="collection">Open Collection</button><button data-dev="stats">Open Stats</button>
+ <button data-dev="stuck-empty">No Moves · Stock Empty</button><button data-dev="progress">Test Progress Reward</button><button data-dev="real-progress">Test Real Reward</button><button data-dev="reset-progress">Reset Progression</button><button data-dev="achievements">Open Achievements</button><button data-dev="collection">Open Collection</button><button data-dev="stats">Open Stats</button>
  <button data-preview="spider">Test Spider Shuffle</button><button data-preview="wave">Test Royal Wave</button>
  <button data-preview="tower">Test Card Tower</button><button data-dev="reset">Reset Celebrations</button>
  <button data-dev="unlock">Unlock All</button>
@@ -442,6 +458,8 @@ function showDeveloper(){
  o.querySelector('[data-dev="stuck-stock"]').onclick=()=>{o.remove();devNoMovesTest(true)};
  o.querySelector('[data-dev="stuck-empty"]').onclick=()=>{o.remove();devNoMovesTest(false)};
  o.querySelector('[data-dev="progress"]').onclick=()=>{o.remove();devProgressTest()};
+ o.querySelector('[data-dev="real-progress"]').onclick=()=>{o.remove();devRealProgressTest()};
+ o.querySelector('[data-dev="reset-progress"]').onclick=()=>devResetProgression();
  o.querySelector('[data-dev="achievements"]').onclick=()=>{o.remove();showAchievements()};
  o.querySelector('[data-dev="collection"]').onclick=()=>{o.remove();showCollection()};
  o.querySelector('[data-dev="stats"]').onclick=()=>{o.remove();showStats()};
@@ -824,7 +842,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.13.1');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.13.2');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
