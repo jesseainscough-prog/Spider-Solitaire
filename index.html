@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.16.3</title>
+<title>Spider Solitaire 1.0J.16.4</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -37,9 +37,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 
 /* J.16.2: animate the actual tableau card elements for real moves. */
 .card.real-moving{pointer-events:none!important;will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden}
-/* J.16.3 invalid-card feedback. */
-.card.invalid-jiggle{z-index:1900!important;animation:invalidCardJiggle 180ms ease-out}
-@keyframes invalidCardJiggle{0%,100%{transform:translateX(0)}22%{transform:translateX(-4px)}48%{transform:translateX(4px)}72%{transform:translateX(-2px)}88%{transform:translateX(2px)}}
+22%{transform:translateX(-4px)}48%{transform:translateX(4px)}72%{transform:translateX(-2px)}88%{transform:translateX(2px)}}
 @media(max-width:430px){.card-suit-index,.card-rank-index{top:2px;font-size:clamp(11px,3.5vw,17px)}.card-rank-index{left:2px}.card-suit-index{right:2px}}
 .card.selected{outline:3px solid var(--gold);outline-offset:-2px}.card.just-flipped,.early-flip{animation:quickFlip .24s cubic-bezier(.2,.75,.25,1);transform-origin:center center;backface-visibility:hidden;-webkit-backface-visibility:hidden;will-change:transform}@keyframes quickFlip{0%{transform:scaleX(.05)}48%{transform:scaleX(.05)}100%{transform:scaleX(1)}}
 .watermark{position:absolute;left:0;right:0;top:180px;text-align:center;font-size:145px;color:#000;opacity:.05;pointer-events:none;z-index:1}
@@ -125,7 +123,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.3</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.4</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -156,7 +154,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.3'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.4'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -354,8 +352,18 @@ function feedback(kind,hap='light'){sfx(kind);haptic(hap)}
 document.addEventListener('pointerdown',()=>ensureAudio(true),{passive:true});
 function invalidCardJiggle(c,i){
  let el=cardEl(c,i);if(!el){feedback('invalid','error');return}
- el.classList.remove('invalid-jiggle');void el.offsetWidth;el.classList.add('invalid-jiggle');
- feedback('invalid','error');setTimeout(()=>el.classList.remove('invalid-jiggle'),190)
+ el.getAnimations().forEach(a=>a.cancel());
+ el.style.zIndex='1900';
+ feedback('invalid','error');
+ let a=el.animate([
+  {transform:'translate3d(0,0,0)'},
+  {transform:'translate3d(-6px,0,0)'},
+  {transform:'translate3d(6px,0,0)'},
+  {transform:'translate3d(-4px,0,0)'},
+  {transform:'translate3d(3px,0,0)'},
+  {transform:'translate3d(0,0,0)'}
+ ],{duration:220,easing:'ease-out'});
+ a.finished.catch(()=>{}).finally(()=>{el.style.zIndex=''})
 }
 
 function applyPrefs(){let x=tableThemes[prefs.theme]||tableThemes.classic,r=document.documentElement;['felt1','felt2','felt3','shell'].forEach(k=>r.style.setProperty('--'+k,x[k]))}
@@ -1052,7 +1060,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.3');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.4');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
