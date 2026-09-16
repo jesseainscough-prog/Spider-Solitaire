@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.14.11</title>
+<title>Spider Solitaire 1.0J.15.0</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -108,7 +108,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.14.11</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.15.0</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -126,6 +126,20 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 <div id="status" class="status" aria-live="polite">Tap a movable card or stack. Smart Tap will make the best legal move.</div>
 <div id="toast" class="toast"></div>
 <script>
+/* J.15.0 local analytics/monetization foundation.
+   No ads, network tracking, SDKs, or purchases are active yet. */
+const ANALYTICS_KEY='spider-solitaire-analytics-v1';
+function analyticsDefaults(){return {schema:1,createdAt:Date.now(),updatedAt:Date.now(),sessions:0,gameStarts:0,wins:0,hints:0,undos:0,deals:0,completedSuits:0,byDifficulty:{1:{starts:0,wins:0},2:{starts:0,wins:0},4:{starts:0,wins:0}},monetization:{interstitialEligible:0,interstitialShown:0,rewardedEligible:0,rewardedShown:0,removeAdsPurchases:0},events:[]}}
+function loadAnalytics(){try{let a=JSON.parse(localStorage.getItem(ANALYTICS_KEY)||'null'),d=analyticsDefaults();if(!a)return d;return Object.assign(d,a,{byDifficulty:Object.assign(d.byDifficulty,a.byDifficulty||{}),monetization:Object.assign(d.monetization,a.monetization||{})})}catch(e){return analyticsDefaults()}}
+let appAnalytics=loadAnalytics();
+function saveAnalytics(){try{appAnalytics.updatedAt=Date.now();localStorage.setItem(ANALYTICS_KEY,JSON.stringify(appAnalytics))}catch(e){}}
+function trackEvent(name,data={}){try{let e={name,ts:Date.now(),suits:(typeof prefs!=='undefined'&&prefs.suits)||null,daily:!!(typeof dailyMode!=='undefined'&&dailyMode),...data};appAnalytics.events.push(e);if(appAnalytics.events.length>250)appAnalytics.events=appAnalytics.events.slice(-250);saveAnalytics()}catch(e){}}
+function metric(name,n=1){if(typeof appAnalytics[name]==='number'){appAnalytics[name]+=n;saveAnalytics()}}
+function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&prefs.suits)||1),b=appAnalytics.byDifficulty[s]||(appAnalytics.byDifficulty[s]={starts:0,wins:0});b[kind]=(b[kind]||0)+1;saveAnalytics()}catch(e){}}
+function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
+function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
+function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.15.0'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -605,7 +619,7 @@ async function animateOpeningDeal(){
  flyers.forEach(({f,real})=>{f.remove();real.style.visibility=''});
  render();animating=false;resetInactivity()
 }
-function newGame(animateDeal=true){dismissStuckBanner();cancelHint();closeStuckPopup();pendingProgressSummary=null;lastStuckSignature='';developerStuckTest=false;stopClock();started=false;history=[];selected=null;developerGame=false;let d=deck(),rng=dailyMode?seededRandom(seedFromString(`spider-${dailyDate}-${prefs.suits}`)):Math.random;shuffle(d,rng);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,completedSuits:[],elapsed:0,undoUsed:false,challengeIds:(pendingNextChallenges||chooseDealChallenges()).slice(),maxSameSuitStackMoved:0,dealsUsed:0,firstSuitDealsUsed:null};pendingNextChallenges=null;status.textContent=`${prefs.suits===4?'4-Suit':prefs.suits===2?'2-Suit':'1-Suit'} game. Tap a movable card or stack.`;render();if(animateDeal)animateOpeningDeal();else resetInactivity()}
+function newGame(animateDeal=true){metric('gameStarts');difficultyMetric('starts');trackEvent('game_start');dismissStuckBanner();cancelHint();closeStuckPopup();pendingProgressSummary=null;lastStuckSignature='';developerStuckTest=false;stopClock();started=false;history=[];selected=null;developerGame=false;let d=deck(),rng=dailyMode?seededRandom(seedFromString(`spider-${dailyDate}-${prefs.suits}`)):Math.random;shuffle(d,rng);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,completedSuits:[],elapsed:0,undoUsed:false,challengeIds:(pendingNextChallenges||chooseDealChallenges()).slice(),maxSameSuitStackMoved:0,dealsUsed:0,firstSuitDealsUsed:null};pendingNextChallenges=null;status.textContent=`${prefs.suits===4?'4-Suit':prefs.suits===2?'2-Suit':'1-Suit'} game. Tap a movable card or stack.`;render();if(animateDeal)animateOpeningDeal();else resetInactivity()}
 function movable(c,i){let a=state.cols[c];if(i<0||!a[i]?.faceUp)return false;for(let x=i;x<a.length-1;x++)if(!a[x+1].faceUp||val(a[x].rank)!==val(a[x+1].rank)+1||(prefs.suits>1&&(a[x].suit||'♠')!==(a[x+1].suit||'♠')))return false;return true}
 function legal(f,i,t){if(f===t||!movable(f,i))return false;let m=state.cols[f][i],d=state.cols[t];return !d.length||val(d[d.length-1].rank)===val(m.rank)+1}
 function flip(c){let a=state.cols[c];if(a.length&&!a[a.length-1].faceUp){a[a.length-1].faceUp=true;a[a.length-1]._justFlipped=true}}
@@ -683,7 +697,7 @@ async function post(){
    let pc=state._pendingComplete;
    await animateCompletion(pc);
    state.cols[c].splice(pc.index,13);
-   state.completed++;state.completedSuits=state.completedSuits||[];state.completedSuits.push((pc.cards[0]?.suit)||'♠');if(state.firstSuitDealsUsed==null)state.firstSuitDealsUsed=state.dealsUsed||0;
+   state.completed++;state.completedSuits=state.completedSuits||[];state.completedSuits.push((pc.cards[0]?.suit)||'♠');metric('completedSuits');trackEvent('suit_completed');if(state.firstSuitDealsUsed==null)state.firstSuitDealsUsed=state.dealsUsed||0;
    flip(c);
    state._pendingComplete=null;
    status.textContent='Suit completed!';feedback('complete','medium');
@@ -691,7 +705,7 @@ async function post(){
    await sleep(180);
   }
  }
- if(state.completed===8&&state.stock.length===0&&state.cols.every(c=>c.length===0)){stopClock();toast('You won!');status.textContent='Game complete!';feedback('win','strong');recordFinishedGame(true);
+ if(state.completed===8&&state.stock.length===0&&state.cols.every(c=>c.length===0)){metric('wins');difficultyMetric('wins');trackEvent('game_win',{moves:state.moves,time:state.elapsed||0});stopClock();toast('You won!');status.textContent='Game complete!';feedback('win','strong');recordFinishedGame(true);
  if(dailyMode&&!developerGame&&dailyDate===dateKey()){let dd=dailyData();dd.wins=dd.wins||{};let oldDay=dd.wins[dailyDate],day=(oldDay&&oldDay.bySuit)?oldDay:{bySuit:{}};day.bySuit[prefs.suits]={completedAt:Date.now(),suits:prefs.suits,moves:state.moves,time:state.elapsed};dd.wins[dailyDate]=day;saveDaily(dd);toast('Daily Challenge complete!')}
  render();if(!document.querySelector('.win-overlay,.celebration-stage'))celebrateWin();won=true}
  return won
@@ -890,7 +904,7 @@ function showStuckPopup(canDeal,force=false){
  board.appendChild(o);o.querySelector('.stuck-secondary').onclick=()=>{o.remove();resetInactivity()};o.querySelector('.stuck-primary').onclick=()=>{o.remove();if(hasProgress()&&!developerGame)recordFinishedGame(false);dailyMode=false;dailyDate=null;newGame();resetInactivity()};
 }
 function checkForStuck(){if(!state||(developerGame&&!developerStuckTest))return false;if(animating||hintRun||document.querySelector('.settings-overlay,.daily-invite,.celebration-stage,.win-overlay')){resetInactivity();return false}if(legalMoves().length)return false;showStuckPopup(state.stock.length>=10);return true}
-async function runHints(){cardFlick();resetInactivity();if(hintRun){cancelHint('Hint tour stopped.');return}let legalList=legalMoves();if(!legalList.length){status.textContent=state.stock.length>=10?'No tableau moves available. Deal the next row.':'No more legal moves.';showStuckPopup(state.stock.length>=10,true);return}let ranked=allMoves(),emptyHints=ranked.filter(m=>state.cols[m.to].length===0),list=ranked.filter(m=>state.cols[m.to].length!==0).slice(0,5);
+async function runHints(){cardFlick();metric('hints');trackEvent('hint_requested');resetInactivity();if(hintRun){cancelHint('Hint tour stopped.');return}let legalList=legalMoves();if(!legalList.length){status.textContent=state.stock.length>=10?'No tableau moves available. Deal the next row.':'No more legal moves.';showStuckPopup(state.stock.length>=10,true);return}let ranked=allMoves(),emptyHints=ranked.filter(m=>state.cols[m.to].length===0),list=ranked.filter(m=>state.cols[m.to].length!==0).slice(0,5);
 if(emptyHints.length){
  status.textContent='Move cards to an empty column.';
  showStuckMessage('Move cards to an empty column');
@@ -954,6 +968,7 @@ function smart(c,i){if(hintRun)cancelHint();if(animating)return;if(!movable(c,i)
 function tapDest(c){if(selected)perform(selected.col,selected.index,c,'Manual move completed.')}
 async function deal(){
 dismissStuckBanner();
+metric('deals');trackEvent('stock_deal');
 if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;
 if(state.stock.length<10){toast('No deals remaining');feedback('invalid','error');return}
 remember();startClock();animating=true;selected=null;
@@ -978,7 +993,7 @@ function render(){if(modeLabel)modeLabel.textContent=dailyMode?`Daily Challenge 
 function pointerDown(e,c,i,el){resetInactivity();if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;if(!movable(c,i))return;pointer={id:e.pointerId,c,i,x:e.clientX,y:e.clientY,drag:false,el,h:null,dx:0,dy:0};el.setPointerCapture?.(e.pointerId);document.addEventListener('pointermove',pointerMove,{passive:false})}
 function pointerMove(e){if(!pointer||e.pointerId!==pointer.id)return;let dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.drag&&Math.hypot(dx,dy)<12)return;if(!pointer.drag){pointer.drag=true;pointer.h=motionStack(pointer.c,pointer.i);let r=pointer.el.getBoundingClientRect();pointer.dx=e.clientX-r.left;pointer.dy=e.clientY-r.top}e.preventDefault();let br=board.getBoundingClientRect();pointer.h.style.left=(e.clientX-br.left-pointer.dx)+'px';pointer.h.style.top=(e.clientY-br.top-pointer.dy)+'px';document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column');if(t&&legal(pointer.c,pointer.i,+t.dataset.col))t.classList.add('drop-target')}
 function pointerUp(e,c,i){document.removeEventListener('pointermove',pointerMove);if(!pointer)return;document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let p=pointer;pointer=null;if(p.drag){let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column'),to=t?+t.dataset.col:null;p.h?.remove();if(to!==null&&legal(p.c,p.i,to)){perform(p.c,p.i,to,'Dragged move completed.');return}feedback('invalid','error');render();return}prefs.smartTap?smart(c,i):manualTap(c,i)}
-async function undo(){
+async function undo(){metric('undos');trackEvent('undo_requested');
 if(hintRun)cancelHint('Hint tour stopped.');if(animating||!history.length)return;
 const previous=history[history.length-1],current=copy();animating=true;selected=null;let found=null;
 for(let from=0;from<10&&!found;from++)for(let to=0;to<10&&!found;to++){if(from===to)continue;let cf=current.cols[from],pf=previous.cols[from],ct=current.cols[to],pt=previous.cols[to];if(pf.length>cf.length&&ct.length>pt.length){let n=pf.length-cf.length;if(n===ct.length-pt.length)found={from,to,index:ct.length-n,n}}}
@@ -995,7 +1010,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.14.11');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.15.0');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
