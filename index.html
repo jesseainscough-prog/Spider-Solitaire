@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.14.9</title>
+<title>Spider Solitaire 1.0J.14.10</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -86,6 +86,9 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .settings-row{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;padding:12px 11px;margin:6px 0;border:1px solid #ffffff22;border-radius:12px;background:#ffffff0b;color:#fff;font:inherit}
 .settings-row b{font-size:13px}.settings-row span{font-size:11px;opacity:.62}.settings-row .chev{font-size:18px;color:#efd58e;opacity:1}.settings-row:disabled{opacity:.42}
 .settings-note{font-size:11px;opacity:.55;line-height:1.4;margin:8px 2px}.daily-card{margin:10px 0;padding:13px;border:1px solid #e8c87966;border-radius:13px;background:#ffffff0c}.daily-card h3{margin:0 0 4px;color:#efd58e;font:700 18px Georgia,serif}.daily-meta{font-size:11px;opacity:.72;line-height:1.45}.daily-btn{width:100%;margin-top:10px;padding:11px;border-radius:11px;border:1px solid #efd58e;background:#e5bd65;color:#173326;font-weight:800}.daily-badge{display:inline-block;margin-left:5px;padding:2px 6px;border-radius:999px;background:#e8c87922;color:#efd58e;font-size:10px}.daily-invite{position:absolute;inset:0;z-index:3000;background:#00150fc9;display:flex;align-items:center;justify-content:center;padding:24px}.daily-invite-card{width:min(340px,92vw);background:#0b2b20;border:1px solid #e8c87988;border-radius:18px;padding:22px;text-align:center;box-shadow:0 18px 50px #0009}.daily-invite-card h2{margin:0 0 8px;color:#efd58e;font:700 25px Georgia,serif}.daily-invite-card p{margin:0 0 16px;line-height:1.45}.daily-invite-actions{display:flex;gap:9px}.daily-invite-actions button{flex:1;padding:11px 8px;border-radius:10px;font-weight:800;border:1px solid #e8c879}.daily-play{background:#e5bd65;color:#173326}.daily-later{background:#ffffff0c;color:#fff}.stuck-overlay{position:absolute;inset:0;z-index:3100;background:#00150fc9;display:flex;align-items:center;justify-content:center;padding:24px}
+
+.stuck-message{position:absolute;z-index:3050;left:50%;bottom:14px;transform:translateX(-50%);max-width:calc(100% - 32px);padding:10px 14px;border:1px solid #e8c87988;border-radius:12px;background:#0b2b20e8;box-shadow:0 8px 24px #0006;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-size:13px;font-weight:800;line-height:1.2;text-align:center;pointer-events:none;animation:stuckMessageLife 2.8s ease forwards}
+@keyframes stuckMessageLife{0%{opacity:0;transform:translate(-50%,8px)}10%,78%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-4px)}}
 .stuck-banner{position:absolute;z-index:3050;left:16px;right:16px;bottom:12px;display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #e8c87988;border-radius:14px;background:#0b2b20d9;box-shadow:0 8px 24px #0006;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .stuck-banner .stuck-banner-text{flex:1;min-width:0;font-size:13px;font-weight:700;line-height:1.2}
 .stuck-banner .stuck-primary{flex:0 0 auto;padding:9px 12px;border-radius:9px;font-weight:800;border:1px solid #e8c879;background:#e5bd65;color:#173326}
@@ -105,7 +108,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.14.9</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.14.10</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -873,16 +876,13 @@ let inactivityTimer=null,lastStuckSignature='',developerStuckTest=false;
 function positionSignature(){return state?`${state.moves}|${state.stock.length}|${state.completed}|${state.cols.map(c=>c.map(x=>x.id??x.rank).join('.')).join('/')}`:''}
 function closeStuckPopup(){document.querySelector('.stuck-overlay')?.remove()}
 function resetInactivity(){clearTimeout(inactivityTimer);if(!state||(developerGame&&!developerStuckTest)||document.querySelector('.settings-overlay,.daily-invite,.celebration-stage,.win-overlay'))return;inactivityTimer=setTimeout(()=>checkForStuck(),10000)}
-function dismissStuckBanner(){let b=document.querySelector('.stuck-banner');if(b)b.remove()}
+function dismissStuckBanner(){document.querySelectorAll('.stuck-banner,.stuck-message').forEach(b=>b.remove())}
+function showStuckMessage(text){dismissStuckBanner();let b=document.createElement('div');b.className='stuck-message';b.textContent=text;board.appendChild(b);setTimeout(()=>{if(b.isConnected)b.remove()},2850)}
 function showStuckPopup(canDeal,force=false){
  let existing=document.querySelector('.stuck-overlay,.stuck-banner');if(existing){if(force&&existing.classList.contains('stuck-banner'))existing.remove();else return}
  let sig=positionSignature();if(!force&&sig===lastStuckSignature)return;lastStuckSignature=sig;
  if(canDeal){
-  let b=document.createElement('div');b.className='stuck-banner';
-  b.innerHTML=`<div class="stuck-banner-text">No useful moves · Deal the next row</div><button class="stuck-primary">Deal Cards</button><button class="stuck-close" aria-label="Dismiss">×</button>`;
-  board.appendChild(b);
-  b.querySelector('.stuck-close').onclick=()=>{b.remove();resetInactivity()};
-  b.querySelector('.stuck-primary').onclick=()=>{b.remove();deal();resetInactivity()};
+  showStuckMessage('No useful moves — deal the next row.');
   return;
  }
  let o=document.createElement('div');o.className='stuck-overlay';
@@ -893,7 +893,7 @@ function checkForStuck(){if(!state||(developerGame&&!developerStuckTest))return 
 async function runHints(){cardFlick();resetInactivity();if(hintRun){cancelHint('Hint tour stopped.');return}let legalList=legalMoves();if(!legalList.length){status.textContent=state.stock.length>=10?'No tableau moves available. Deal the next row.':'No more legal moves.';showStuckPopup(state.stock.length>=10,true);return}let ranked=allMoves(),emptyHints=ranked.filter(m=>state.cols[m.to].length===0),list=ranked.filter(m=>state.cols[m.to].length!==0).slice(0,5);
 if(emptyHints.length){
  status.textContent='Move cards to an empty column.';
- toast('Move cards to an empty column');
+ showStuckMessage('Move cards to an empty column.');
 }
 if(!list.length){
  if(emptyHints.length)return;
@@ -995,7 +995,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.14.9');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.14.10');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
