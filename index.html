@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.13.6</title>
+<title>Spider Solitaire 1.0J.14.0</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -101,7 +101,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.13.6</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.14.0</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -299,10 +299,39 @@ function recordFinishedGame(won){
 const PREFS_KEY='spider-solitaire-preferences';
 const tableThemes={classic:{name:'Classic Green',felt1:'#075534',felt2:'#06462e',felt3:'#043723',shell:'#0b2018'},blue:{name:'Midnight Blue',felt1:'#164f73',felt2:'#0d3d5d',felt3:'#082d46',shell:'#0a1c29'},burgundy:{name:'Casino Red',felt1:'#8a2636',felt2:'#6b1928',felt3:'#45101b',shell:'#260a10'},charcoal:{name:'Casino Black',felt1:'#34383a',felt2:'#24282a',felt3:'#151819',shell:'#0c0e0f'}};
 const cardBacks={blue:'Classic Blue',red:'Royal Red',black:'Midnight Black',green:'Emerald'};
-function defaultPrefs(){return {theme:'classic',cardBack:'blue',smartTap:true,suits:1}}
+function defaultPrefs(){return {theme:'classic',cardBack:'blue',smartTap:true,suits:1,sound:true,haptics:true}}
 function getPrefs(){try{return Object.assign(defaultPrefs(),JSON.parse(localStorage.getItem(PREFS_KEY)||'{}'))}catch(e){return defaultPrefs()}}
 function setPrefs(x){try{localStorage.setItem(PREFS_KEY,JSON.stringify(x))}catch(e){}}
 let prefs=getPrefs();
+let audioCtx=null;
+function ensureAudio(){
+ if(!prefs.sound)return null;
+ try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx}catch(e){return null}
+}
+function tone(freq,dur=.045,vol=.025,type='sine',delay=0){
+ if(!prefs.sound)return;let a=ensureAudio();if(!a)return;let o=a.createOscillator(),g=a.createGain(),now=a.currentTime+delay;
+ o.type=type;o.frequency.setValueAtTime(freq,now);g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(Math.max(.0002,vol),now+.008);g.gain.exponentialRampToValueAtTime(.0001,now+dur);
+ o.connect(g);g.connect(a.destination);o.start(now);o.stop(now+dur+.02)
+}
+function sfx(kind){
+ if(!prefs.sound)return;
+ if(kind==='tap')tone(520,.025,.012,'sine');
+ else if(kind==='move'){tone(330,.035,.018,'triangle');tone(440,.035,.012,'triangle',.025)}
+ else if(kind==='flip'){tone(650,.035,.018,'triangle');tone(820,.03,.012,'triangle',.025)}
+ else if(kind==='deal'){[300,360,420].forEach((f,i)=>tone(f,.045,.018,'triangle',i*.035))}
+ else if(kind==='undo'){tone(440,.045,.018,'triangle');tone(300,.055,.014,'triangle',.04)}
+ else if(kind==='invalid'){tone(150,.07,.022,'square');tone(120,.06,.014,'square',.055)}
+ else if(kind==='complete'){[440,554,659,880].forEach((f,i)=>tone(f,.09,.028,'triangle',i*.07))}
+ else if(kind==='level'){[523,659,784,1047].forEach((f,i)=>tone(f,.12,.032,'sine',i*.085))}
+ else if(kind==='win'){[392,523,659,784,1047].forEach((f,i)=>tone(f,.14,.034,'triangle',i*.09))}
+}
+function haptic(kind='light'){
+ if(!prefs.haptics)return;
+ try{if(navigator.vibrate){let p=kind==='strong'?[35,35,55]:kind==='medium'?[22]:kind==='error'?[18,35,18]:[10];navigator.vibrate(p)}}catch(e){}
+}
+function feedback(kind,hap='light'){sfx(kind);haptic(hap)}
+document.addEventListener('pointerdown',()=>ensureAudio(),{passive:true});
+
 function applyPrefs(){let x=tableThemes[prefs.theme]||tableThemes.classic,r=document.documentElement;['felt1','felt2','felt3','shell'].forEach(k=>r.style.setProperty('--'+k,x[k]))}
 function cardBackStyle(id){return ({blue:'repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px)',red:'repeating-linear-gradient(45deg,#6d1522,#6d1522 3px,#a42b3b 3px,#a42b3b 6px)',black:'repeating-linear-gradient(45deg,#15191c,#15191c 3px,#343b40 3px,#343b40 6px)',green:'repeating-linear-gradient(45deg,#0b4c36,#0b4c36 3px,#167354 3px,#167354 6px)'})[id]||'repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px)'}
 function showTableauChooser(){document.querySelector('.settings-overlay')?.remove();let o=document.createElement('div');o.className='settings-overlay';o.innerHTML=`<div class="settings-head"><button class="nav-back">← Back</button><h2>Tableau Color</h2><button class="settings-close">×</button></div><div class="choice-grid">${Object.entries(tableThemes).map(([id,x])=>`<button class="choice-card ${prefs.theme===id?'selected':''}" data-theme="${id}"><div class="felt-swatch" style="background:linear-gradient(145deg,${x.felt1},${x.felt3})"></div><b>${x.name}</b><small>${prefs.theme===id?'Selected':'Tap to select'}</small></button>`).join('')}</div>`;board.appendChild(o);o.querySelector('.settings-close').onclick=()=>o.remove();o.querySelector('.nav-back').onclick=()=>{o.remove();showSettings()};o.querySelectorAll('[data-theme]').forEach(b=>b.onclick=()=>{prefs.theme=b.dataset.theme;setPrefs(prefs);applyPrefs();o.remove();showTableauChooser()})}
@@ -351,7 +380,7 @@ function compactRewardSummaryHTML(summary){
 function showRewardsScreen(summary,chosen){
  let o=document.createElement('div');o.className='win-overlay';
  o.innerHTML=`<div class="win-panel postwin-panel rewards-screen"><div class="postwin-step">2 of 3 · Rewards</div><h2>Rewards & Progress</h2>${challengeResultsHTML(summary)}${compactRewardSummaryHTML(summary)}<div class="postwin-actions"><button id="rewardsContinue">Continue</button></div></div>`;
- board.appendChild(o);requestAnimationFrame(()=>requestAnimationFrame(()=>{let f=o.querySelector('.reward-progress');if(f)f.style.width=(+f.dataset.pct||0)+'%'}));o.querySelector('#rewardsContinue').onclick=()=>{o.remove();showNextDealChallenges(true)}
+ board.appendChild(o);if(summary?.afterLevel?.level>summary?.beforeLevel?.level)feedback('level','strong');requestAnimationFrame(()=>requestAnimationFrame(()=>{let f=o.querySelector('.reward-progress');if(f)f.style.width=(+f.dataset.pct||0)+'%'}));o.querySelector('#rewardsContinue').onclick=()=>{o.remove();showNextDealChallenges(true)}
 }
 function rewardSummaryHTML(summary){
  if(!summary)return '';let b=summary.beforeLevel,a=summary.afterLevel;
@@ -378,8 +407,8 @@ function showSettings(){
   <button class="settings-row" data-open="cardback"><span><b>Card Back</b><br><span>${cardBacks[prefs.cardBack]||cardBacks.blue}</span></span><span class="chev">›</span></button>
  </div>
  <div class="settings-section"><h3>Sound & Haptics</h3>
-  <button class="settings-row" disabled><span><b>Sound</b><br><span>Game sound controls</span></span><span>Coming Soon</span></button>
-  <button class="settings-row" disabled><span><b>Haptics</b><br><span>Touch feedback controls</span></span><span>Coming Soon</span></button>
+  <button class="settings-row" data-toggle="sound"><span><b>Sound Effects</b><br><span>Card and game feedback · no background music</span></span><span class="toggle ${prefs.sound?'on':''}"></span></button>
+  <button class="settings-row" data-toggle="haptics"><span><b>Haptics</b><br><span>Touch feedback when supported by your device</span></span><span class="toggle ${prefs.haptics?'on':''}"></span></button>
  </div>
  <div class="settings-note">More customization will be added here as Spider Solitaire grows.</div>`;
  board.appendChild(o);
@@ -397,8 +426,11 @@ function showSettings(){
  o.querySelector('[data-open="suits"]').onclick=()=>{o.remove();showSuitChooser()};
  o.querySelector('[data-open="tableau"]').onclick=()=>{o.remove();showTableauChooser()};
  o.querySelector('[data-open="cardback"]').onclick=()=>{o.remove();showCardBackChooser()};
- o.querySelector('[data-toggle="smart"]').onclick=()=>{prefs.smartTap=!prefs.smartTap;setPrefs(prefs);o.remove();showSettings()}
+ o.querySelector('[data-toggle="smart"]').onclick=()=>{prefs.smartTap=!prefs.smartTap;setPrefs(prefs);o.remove();showSettings()};
+ o.querySelector('[data-toggle="sound"]').onclick=()=>{prefs.sound=!prefs.sound;setPrefs(prefs);if(prefs.sound){ensureAudio();sfx('tap')}o.remove();showSettings()};
+ o.querySelector('[data-toggle="haptics"]').onclick=()=>{prefs.haptics=!prefs.haptics;setPrefs(prefs);if(prefs.haptics)haptic('medium');o.remove();showSettings()}
 }
+document.addEventListener('click',e=>{let b=e.target.closest('button');if(!b||b.disabled)return;if(!['stockControl','undo'].includes(b.id))sfx('tap')},{passive:true});
 function showStats(){
  document.querySelector('.stats-overlay')?.remove();let s=getPlayerStats(),pct=s.gamesPlayed?Math.round(s.wins/s.gamesPlayed*100):0,owned=getCollection().length,o=document.createElement('div');o.className='stats-overlay';
  let tiles=[['Games',s.gamesPlayed],['Wins',s.wins],['Win %',pct+'%'],['Current Streak',s.currentStreak],['Best Streak',s.bestStreak],['Celebrations',owned+'/'+celebrations.length],['Fastest Win',s.bestTime==null?'—':fmt(s.bestTime)],['Fewest Moves',s.fewestMoves==null?'—':s.fewestMoves],['Best Score',s.bestScore==null?'—':s.bestScore]];
@@ -646,12 +678,12 @@ async function post(){
    state.completed++;state.completedSuits=state.completedSuits||[];state.completedSuits.push((pc.cards[0]?.suit)||'♠');if(state.firstSuitDealsUsed==null)state.firstSuitDealsUsed=state.dealsUsed||0;
    flip(c);
    state._pendingComplete=null;
-   status.textContent='Suit completed!';
+   status.textContent='Suit completed!';feedback('complete','medium');
    render();
    await sleep(180);
   }
  }
- if(state.completed===8&&state.stock.length===0&&state.cols.every(c=>c.length===0)){stopClock();toast('You won!');status.textContent='Game complete!';recordFinishedGame(true);
+ if(state.completed===8&&state.stock.length===0&&state.cols.every(c=>c.length===0)){stopClock();toast('You won!');status.textContent='Game complete!';feedback('win','strong');recordFinishedGame(true);
  if(dailyMode&&!developerGame&&dailyDate===dateKey()){let dd=dailyData();dd.wins=dd.wins||{};let oldDay=dd.wins[dailyDate],day=(oldDay&&oldDay.bySuit)?oldDay:{bySuit:{}};day.bySuit[prefs.suits]={completedAt:Date.now(),suits:prefs.suits,moves:state.moves,time:state.elapsed};dd.wins[dailyDate]=day;saveDaily(dd);toast('Daily Challenge complete!')}
  render();if(!document.querySelector('.win-overlay,.celebration-stage'))celebrateWin();won=true}
  return won
@@ -861,7 +893,7 @@ async function revealCardFlip(el,card){
  await sleep(45);
  edge.remove();
  // The detailed face appears once at full width. Safari never scales the artwork.
- el.innerHTML=faceHTML(card);el.className='card face has-index';el.style.overflow='';
+ el.innerHTML=faceHTML(card);el.className='card face has-index';el.style.overflow='';feedback('flip','light');
 }
 async function animateReal(m,commit){
  animating=true;render();
@@ -882,21 +914,21 @@ async function animateReal(m,commit){
   render();
  }
 }
-async function perform(f,i,t,msg='Moved.'){if(animating||!legal(f,i,t))return false;cancelHint();let m={from:f,index:i,to:t};let moved=state.cols[f].slice(i),sameSuit=moved.length&&moved.every(c=>(c.suit||'♠')===(moved[0].suit||'♠'));remember();if(sameSuit)state.maxSameSuitStackMoved=Math.max(state.maxSameSuitStackMoved||0,moved.length);startClock();await animateReal(m,async()=>{state.cols[t].push(...state.cols[f].splice(i));flip(f);state.moves++;selected=null;status.textContent=msg;await post()});return true}
+async function perform(f,i,t,msg='Moved.'){if(animating||!legal(f,i,t))return false;cancelHint();let m={from:f,index:i,to:t};let moved=state.cols[f].slice(i),sameSuit=moved.length&&moved.every(c=>(c.suit||'♠')===(moved[0].suit||'♠'));remember();if(sameSuit)state.maxSameSuitStackMoved=Math.max(state.maxSameSuitStackMoved||0,moved.length);startClock();await animateReal(m,async()=>{state.cols[t].push(...state.cols[f].splice(i));flip(f);state.moves++;selected=null;status.textContent=msg;feedback('move','light');await post()});return true}
 function manualTap(c,i){
  if(hintRun)cancelHint();if(animating)return;
  if(selected){
    if(selected.col===c&&selected.index===i){selected=null;status.textContent='Selection cleared.';render();return}
    if(legal(selected.col,selected.index,c)){perform(selected.col,selected.index,c,'Move completed.');return}
  }
- if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';return}
+ if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';feedback('invalid','error');return}
  selected={col:c,index:i};status.textContent='Stack selected. Tap a destination or drag.';render()
 }
-function smart(c,i){if(hintRun)cancelHint();if(animating)return;if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';return}if(!prefs.smartTap){selected={col:c,index:i};status.textContent='Stack selected. Tap a destination or drag.';render();return}let m=best(c,i);if(m)perform(c,i,m.to,'Smart move completed.');else{selected={col:c,index:i};status.textContent='No automatic move found. Tap a destination or drag.';render()}}
+function smart(c,i){if(hintRun)cancelHint();if(animating)return;if(!movable(c,i)){status.textContent='That card or stack cannot be moved.';feedback('invalid','error');return}if(!prefs.smartTap){selected={col:c,index:i};status.textContent='Stack selected. Tap a destination or drag.';render();return}let m=best(c,i);if(m)perform(c,i,m.to,'Smart move completed.');else{selected={col:c,index:i};status.textContent='No automatic move found. Tap a destination or drag.';render()}}
 function tapDest(c){if(selected)perform(selected.col,selected.index,c,'Manual move completed.')}
 async function deal(){
 if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;
-if(state.stock.length<10){toast('No deals remaining');return}
+if(state.stock.length<10){toast('No deals remaining');feedback('invalid','error');return}
 remember();startClock();animating=true;selected=null;
 const br=board.getBoundingClientRect(), sr=stockEl.getBoundingClientRect(), flyers=[];
 for(let c=0;c<10;c++){
@@ -908,7 +940,7 @@ for(let c=0;c<10;c++){
 }
 await sleep(500);
 for(let c=0;c<10;c++){let x=state.stock.pop();x.faceUp=true;state.cols[c].push(x)}
-state.dealsUsed=(state.dealsUsed||0)+1;state.moves++;status.textContent='Dealt one new card to every column.';
+state.dealsUsed=(state.dealsUsed||0)+1;state.moves++;status.textContent='Dealt one new card to every column.';feedback('deal','medium');
 render();
 flyers.forEach(f=>f.remove());
 await post();render();animating=false
@@ -916,13 +948,13 @@ await post();render();animating=false
 function render(){if(modeLabel)modeLabel.textContent=dailyMode?`Daily Challenge • ${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'}`:`${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'} • ${prefs.smartTap?'Smart Tap':'Manual Tap'}`;columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');if(!card.faceUp)e.style.background=cardBackStyle(prefs.cardBack);e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.classList.add('has-index');e.innerHTML=faceHTML(card);e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>pointerUp(ev,ci,i))}col.appendChild(e)});col.addEventListener('pointerup',e=>{resetInactivity();if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});let deals=Math.floor(state.stock.length/10);stockEl.innerHTML='';for(let i=0;i<deals;i++){let s=document.createElement('div');s.className='stock-card';s.style.background=cardBackStyle(prefs.cardBack);s.style.left=(i*10)+'px';s.style.top='2px';s.style.zIndex=i+1;stockEl.appendChild(s)}stockControl.disabled=!deals;stockControl.setAttribute('aria-label',deals?`Deal next row. ${deals} deals remaining`:'No deals remaining');completedEl.innerHTML='';for(let i=0;i<8;i++){let c=document.createElement('div');c.className=i<state.completed?'complete-card':'complete-slot';c.textContent=i<state.completed?'K'+((state.completedSuits&&state.completedSuits[i])||'♠'):'♠';completedEl.appendChild(c)}undoBtn.disabled=!history.length;stats();saveGame();setTimeout(()=>state.cols.forEach(col=>col.forEach(card=>delete card._justFlipped)),100)}
 function pointerDown(e,c,i,el){resetInactivity();if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;if(!movable(c,i))return;pointer={id:e.pointerId,c,i,x:e.clientX,y:e.clientY,drag:false,el,h:null,dx:0,dy:0};el.setPointerCapture?.(e.pointerId);document.addEventListener('pointermove',pointerMove,{passive:false})}
 function pointerMove(e){if(!pointer||e.pointerId!==pointer.id)return;let dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(!pointer.drag&&Math.hypot(dx,dy)<12)return;if(!pointer.drag){pointer.drag=true;pointer.h=motionStack(pointer.c,pointer.i);let r=pointer.el.getBoundingClientRect();pointer.dx=e.clientX-r.left;pointer.dy=e.clientY-r.top}e.preventDefault();let br=board.getBoundingClientRect();pointer.h.style.left=(e.clientX-br.left-pointer.dx)+'px';pointer.h.style.top=(e.clientY-br.top-pointer.dy)+'px';document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column');if(t&&legal(pointer.c,pointer.i,+t.dataset.col))t.classList.add('drop-target')}
-function pointerUp(e,c,i){document.removeEventListener('pointermove',pointerMove);if(!pointer)return;document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let p=pointer;pointer=null;if(p.drag){let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column'),to=t?+t.dataset.col:null;p.h?.remove();if(to!==null&&legal(p.c,p.i,to)){perform(p.c,p.i,to,'Dragged move completed.');return}render();return}prefs.smartTap?smart(c,i):manualTap(c,i)}
+function pointerUp(e,c,i){document.removeEventListener('pointermove',pointerMove);if(!pointer)return;document.querySelectorAll('.column').forEach(x=>x.classList.remove('drop-target'));let p=pointer;pointer=null;if(p.drag){let t=document.elementFromPoint(e.clientX,e.clientY)?.closest('.column'),to=t?+t.dataset.col:null;p.h?.remove();if(to!==null&&legal(p.c,p.i,to)){perform(p.c,p.i,to,'Dragged move completed.');return}feedback('invalid','error');render();return}prefs.smartTap?smart(c,i):manualTap(c,i)}
 async function undo(){
 if(hintRun)cancelHint('Hint tour stopped.');if(animating||!history.length)return;
 const previous=history[history.length-1],current=copy();animating=true;selected=null;let found=null;
 for(let from=0;from<10&&!found;from++)for(let to=0;to<10&&!found;to++){if(from===to)continue;let cf=current.cols[from],pf=previous.cols[from],ct=current.cols[to],pt=previous.cols[to];if(pf.length>cf.length&&ct.length>pt.length){let n=pf.length-cf.length;if(n===ct.length-pt.length)found={from,to,index:ct.length-n,n}}}
 if(found){render();let h=motionStack(found.to,found.index),src=cardEl(found.to,found.index);if(h&&src){let sr=src.getBoundingClientRect(),br=board.getBoundingClientRect(),dr=colEl(found.from).getBoundingClientRect(),baseCount=previous.cols[found.from].length-found.n,ys=offsets(previous.cols[found.from]),targetY=baseCount>0?ys[baseCount]:0,dx=(dr.left-br.left)-(sr.left-br.left),dy=(dr.top-br.top+targetY)-(sr.top-br.top);current.cols[found.to].slice(found.index).forEach((_,n)=>{let e=cardEl(found.to,found.index+n);if(e)e.style.visibility='hidden'});await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:190,easing:'cubic-bezier(.2,.8,.25,1)',fill:'forwards'}).finished.catch(()=>{});h.remove()}}else await sleep(90);
-history.pop();state=previous;state.undoUsed=true;animating=false;status.textContent='Last action undone.';render()
+history.pop();state=previous;state.undoUsed=true;animating=false;status.textContent='Last action undone.';feedback('undo','medium');render()
 }
 undoBtn.onclick=()=>{resetInactivity();undo()};hintBtn.onclick=runHints;stockControl.onclick=()=>{resetInactivity();deal()};
 const askNew=()=>{
@@ -934,7 +966,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.13.6');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.14.0');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
