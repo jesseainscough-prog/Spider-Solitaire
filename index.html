@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire by Grit Games 1.0J.20.1</title>
+<title>Spider Solitaire by Grit Games 1.0J.20.2</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -155,13 +155,20 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 
 
 
-.grit-splash{position:fixed;inset:0;z-index:99999;background:#11110f;display:flex;align-items:center;justify-content:center;overflow:hidden;opacity:1;transition:opacity .42s ease}
+.grit-splash{position:fixed;inset:0;z-index:99999;background:#11110f;display:flex;align-items:center;justify-content:center;overflow:hidden;opacity:1;transition:opacity .46s ease}
 .grit-splash.hide{opacity:0;pointer-events:none}
-.grit-brand{text-align:center;transform:translateY(5px);animation:gritBrandIn .72s cubic-bezier(.2,.75,.25,1) both}
-.grit-mark{width:74px;height:74px;margin:0 auto 14px;border:2px solid #d7b66a;border-radius:18px;display:flex;align-items:center;justify-content:center;color:#d7b66a;font:700 44px/1 Georgia,serif;box-shadow:inset 0 0 0 1px #e8c87925}
-.grit-name{font:700 29px/1 Georgia,serif;letter-spacing:6px;color:#f3eee2;margin-left:6px}
-.grit-tag{margin-top:10px;font-size:10px;font-weight:700;letter-spacing:3px;color:#d7b66abf}
-@keyframes gritBrandIn{0%{opacity:0;transform:translateY(12px) scale(.96)}100%{opacity:1;transform:translateY(5px) scale(1)}}
+.grit-brand{text-align:center;transform:translateY(3px)}
+.grit-mark{width:84px;height:84px;margin:0 auto 18px;position:relative;border:1.5px solid #d7b66a;border-radius:20px;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px #d7b66a18;opacity:0;animation:gritMarkIn .48s cubic-bezier(.2,.75,.25,1) .08s forwards}
+.grit-gg{position:relative;width:55px;height:47px}
+.grit-g{position:absolute;width:34px;height:34px;border:4px solid #d7b66a;border-right-color:transparent;border-radius:50%;top:3px}
+.grit-g:after{content:"";position:absolute;width:15px;height:4px;background:#d7b66a;right:-2px;bottom:6px;border-radius:2px}
+.grit-g.one{left:2px}
+.grit-g.two{right:2px;top:10px;transform:rotate(180deg);opacity:.78}
+.grit-name{font:700 32px/1 Georgia,serif;letter-spacing:6.5px;color:#f3eee2;margin-left:6.5px;opacity:0;transform:translateY(5px);animation:gritNameIn .42s ease .48s forwards}
+.grit-tag{margin-top:11px;font-size:9px;font-weight:700;letter-spacing:3.4px;color:#d7b66a9f;opacity:0;animation:gritTagIn .38s ease .82s forwards}
+@keyframes gritMarkIn{0%{opacity:0;transform:scale(.9)}100%{opacity:1;transform:scale(1)}}
+@keyframes gritNameIn{0%{opacity:0;transform:translateY(5px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes gritTagIn{0%{opacity:0}100%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.grit-brand{animation:none}.grit-splash{transition:none}}
 .onboarding{position:absolute;inset:0;z-index:3900;background:#00150fe8;display:flex;align-items:center;justify-content:center;padding:24px}
 .onboarding-card{width:min(360px,94vw);background:linear-gradient(180deg,#073d2a,#052d20);border:1px solid rgba(232,200,121,.55);border-radius:20px;padding:24px 20px 18px;text-align:center;box-shadow:0 18px 50px #000a}
@@ -183,7 +190,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.20.1</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.20.2</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -255,7 +262,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.20.1'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.20.2'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -1270,7 +1277,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.20.1');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.20.2');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
@@ -1282,10 +1289,10 @@ if(versionEl){
 const ONBOARDING_KEY='spider-solitaire-onboarding-v1';
 function showGritSplash(done){
  let o=document.createElement('div');o.className='grit-splash';
- o.innerHTML=`<div class="grit-brand" aria-label="Grit Games"><div class="grit-mark">G</div><div class="grit-name">GRIT GAMES</div><div class="grit-tag">PLAY WITH GRIT</div></div>`;
+ o.innerHTML=`<div class="grit-brand" aria-label="Grit Games"><div class="grit-mark"><div class="grit-gg" aria-hidden="true"><span class="grit-g one"></span><span class="grit-g two"></span></div></div><div class="grit-name">GRIT GAMES</div><div class="grit-tag">PLAY WITH GRIT</div></div>`;
  document.body.appendChild(o);
  let reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
- setTimeout(()=>{o.classList.add('hide');setTimeout(()=>{o.remove();done&&done()},reduced?20:430)},reduced?650:1550);
+ setTimeout(()=>{o.classList.add('hide');setTimeout(()=>{o.remove();done&&done()},reduced?20:430)},reduced?650:1850);
 }
 function showOnboarding(){
  if(localStorage.getItem(ONBOARDING_KEY))return false;
