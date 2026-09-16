@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.15.4</title>
+<title>Spider Solitaire 1.0J.15.5</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -108,7 +108,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.15.4</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.15.5</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -139,7 +139,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.15.4'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.15.5'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -325,7 +325,7 @@ function getPrefs(){try{return Object.assign(defaultPrefs(),JSON.parse(localStor
 function setPrefs(x){try{localStorage.setItem(PREFS_KEY,JSON.stringify(x))}catch(e){}}
 let prefs=getPrefs();
 let audioCtx=null;
-function ensureAudio(){if(!prefs.sound)return null;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx}catch(e){return null}}
+function ensureAudio(force=false){if(!force&&!prefs.sound)return null;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx}catch(e){return null}}
 function noiseBurst(dur=.06,vol=.035,cut=1400,delay=0){if(!prefs.sound)return;let a=ensureAudio();if(!a)return;let n=Math.max(1,Math.floor(a.sampleRate*dur)),buf=a.createBuffer(1,n,a.sampleRate),d=buf.getChannelData(0);for(let i=0;i<n;i++){let env=Math.pow(1-i/n,2.2);d[i]=(Math.random()*2-1)*env}let s=a.createBufferSource(),f=a.createBiquadFilter(),g=a.createGain(),now=a.currentTime+delay;s.buffer=buf;f.type='bandpass';f.frequency.value=cut;f.Q.value=.55;g.gain.setValueAtTime(.0001,now);g.gain.linearRampToValueAtTime(vol,now+.006);g.gain.exponentialRampToValueAtTime(.0001,now+dur);s.connect(f);f.connect(g);g.connect(a.destination);s.start(now);s.stop(now+dur+.015)}
 function cardSlide(delay=0){noiseBurst(.075,.028,950,delay);noiseBurst(.045,.014,2200,delay+.025)}
 function cardFlick(delay=0){noiseBurst(.035,.034,2400,delay);noiseBurst(.025,.018,900,delay+.018)}
@@ -334,7 +334,7 @@ function softChime(freq,dur=.08,vol=.014,delay=0){if(!prefs.sound)return;let a=e
 function sfx(kind){if(!prefs.sound)return;if(kind==='move')cardSlide();else if(kind==='flip')cardFlick();else if(kind==='deal'){for(let i=0;i<5;i++)cardFlick(i*.045)}else if(kind==='undo'){cardSlide();cardFlick(.055)}else if(kind==='invalid')noiseBurst(.045,.018,420);else if(kind==='complete'){for(let i=0;i<4;i++)cardSlide(i*.045);softChime(660,.12,.012,.12)}else if(kind==='level'){softChime(523,.11,.014);softChime(659,.11,.014,.08);softChime(784,.13,.016,.16)}else if(kind==='win'){for(let i=0;i<4;i++)cardFlick(i*.045);softChime(523,.12,.014,.12);softChime(659,.12,.014,.21);softChime(784,.15,.017,.30)}}
 function haptic(kind='light'){if(!prefs.haptics)return;try{if(navigator.vibrate){let p=kind==='strong'?[35,35,55]:kind==='medium'?[22]:kind==='error'?[18,35,18]:[10];navigator.vibrate(p)}}catch(e){}}
 function feedback(kind,hap='light'){sfx(kind);haptic(hap)}
-document.addEventListener('pointerdown',()=>ensureAudio(),{passive:true});
+document.addEventListener('pointerdown',()=>ensureAudio(true),{passive:true});
 
 function applyPrefs(){let x=tableThemes[prefs.theme]||tableThemes.classic,r=document.documentElement;['felt1','felt2','felt3','shell'].forEach(k=>r.style.setProperty('--'+k,x[k]))}
 function cardBackStyle(id){return ({blue:'repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px)',red:'repeating-linear-gradient(45deg,#6d1522,#6d1522 3px,#a42b3b 3px,#a42b3b 6px)',black:'repeating-linear-gradient(45deg,#15191c,#15191c 3px,#343b40 3px,#343b40 6px)',green:'repeating-linear-gradient(45deg,#0b4c36,#0b4c36 3px,#167354 3px,#167354 6px)'})[id]||'repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px)'}
@@ -712,11 +712,11 @@ async function post(){
 }
 function spacingFor(a){
  const boardH=board?.clientHeight||620, usable=Math.max(330,boardH-160), cardH=62;
- let natural=a.reduce((n,c)=>n+(c.faceUp?27:11),0)+cardH;
- if(natural<=usable)return {up:27,down:11};
+ let natural=a.reduce((n,c)=>n+(c.faceUp?22:11),0)+cardH;
+ if(natural<=usable)return {up:22,down:11};
  let excess=natural-usable, faces=a.filter(c=>c.faceUp).length, downs=a.length-faces;
- let up=27,down=11,weight=faces+downs*.45;
- if(weight>0){let cut=excess/weight;up=Math.max(14,27-cut);down=Math.max(7,11-cut*.45)}
+ let up=22,down=11,weight=faces+downs*.45;
+ if(weight>0){let cut=excess/weight;up=Math.max(14,22-cut);down=Math.max(7,11-cut*.45)}
  return {up,down};
 }
 function offsets(a){let y=0,o=[],sp=spacingFor(a);for(const c of a){o.push(y);y+=c.faceUp?sp.up:sp.down}return o}
@@ -1012,7 +1012,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.15.4');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.15.5');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
