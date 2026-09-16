@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.17.12</title>
+<title>Spider Solitaire 1.0J.17.13</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -129,6 +129,18 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .column:empty{border-color:transparent!important;background:transparent!important;box-shadow:none!important}
 .column:has(.empty-slot){border-color:transparent!important;background:transparent!important;box-shadow:none!important}
 .column .empty-slot{border-color:transparent!important;background:transparent!important;box-shadow:none!important;color:transparent!important}
+
+.new-deal-confirm{position:fixed;inset:0;background:rgba(0,20,13,.72);display:flex;align-items:center;justify-content:center;padding:22px;z-index:3200}
+.new-deal-confirm .panel{width:min(390px,94vw);background:linear-gradient(180deg,#073d2a,#052d20);border:1px solid rgba(232,200,121,.48);border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.5);padding:22px 20px 17px;text-align:center}
+.new-deal-confirm h2{margin:0 0 12px;color:var(--gold);font-family:Georgia,serif;letter-spacing:1.5px;font-size:23px}
+.new-deal-confirm p{margin:0 auto 20px;max-width:310px;color:#f7f3e8;line-height:1.4;font-size:16px}
+.new-deal-actions{display:grid;grid-template-columns:1fr 1.35fr;gap:10px}
+.new-deal-actions button{min-height:46px;border-radius:11px;font-weight:700;font-size:15px}
+.new-deal-cancel{background:#0b2d22;color:#eee;border:1px solid rgba(255,255,255,.18)}
+.new-deal-start{background:var(--gold);color:#172016;border:1px solid #f3da98}
+.new-deal-ad-note{margin-top:17px!important;margin-bottom:4px!important;font-size:12px!important;color:#c9c7bd!important}
+.new-deal-remove{border:0;background:transparent;color:var(--gold);font-size:13px;font-weight:700;padding:7px 12px;text-decoration:underline;text-underline-offset:3px}
+
 </style>
 </head>
 <body>
@@ -142,7 +154,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.17.12</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.17.13</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -192,7 +204,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.17.12'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.17.13'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -1168,9 +1180,31 @@ if(found){render();let h=motionStack(found.to,found.index),src=cardEl(found.to,f
 history.pop();state=previous;state.undoUsed=true;animating=false;status.textContent='Last action undone.';feedback('undo','medium');render()
 }
 undoBtn.onclick=()=>{resetInactivity();undo()};hintBtn.onclick=runHints;stockControl.onclick=()=>{resetInactivity();deal()};
+function confirmNewDeal(){
+ return new Promise(resolve=>{
+  let o=document.createElement('div');
+  o.className='new-deal-confirm';
+  o.innerHTML=`<div class="panel" role="dialog" aria-modal="true" aria-labelledby="newDealTitle">
+   <h2 id="newDealTitle">NEW DEAL</h2>
+   <p>Start a new deal? Your current game will be replaced.</p>
+   <div class="new-deal-actions">
+    <button type="button" class="new-deal-cancel">Cancel</button>
+    <button type="button" class="new-deal-start">Start New Deal</button>
+   </div>
+   <p class="new-deal-ad-note">Playing free with ads</p>
+   <button type="button" class="new-deal-remove">Remove Ads — one-time purchase</button>
+  </div>`;
+  document.body.appendChild(o);
+  const finish=v=>{o.remove();resolve(v)};
+  o.querySelector('.new-deal-cancel').onclick=()=>finish(false);
+  o.querySelector('.new-deal-start').onclick=()=>finish(true);
+  o.querySelector('.new-deal-remove').onclick=()=>requestRemoveAds();
+  o.onclick=e=>{if(e.target===o)finish(false)};
+ });
+}
 const askNew=async()=>{
  cancelHint();if(!hasProgress()){showNextDealChallenges();return}
- if(confirm('Start a new deal? Your current game will be replaced.')){
+ if(await confirmNewDeal()){
   if(!developerGame)recordFinishedGame(false);
   await showTestInterstitial();
   showNextDealChallenges();
@@ -1181,7 +1215,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.17.12');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.17.13');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
