@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.14.2</title>
+<title>Spider Solitaire 1.0J.14.3</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -101,7 +101,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.14.2</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.14.3</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -582,19 +582,21 @@ function cancelHint(msg=''){if(!hintRun)return;hintRun.cancelled=true;hintRun=nu
 async function animateOpeningDeal(){
  if(animating)return;animating=true;
  render();
- const br=board.getBoundingClientRect(),sr=stockEl.getBoundingClientRect(),targets=[];
- for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)targets.push({c,i:r});
- const startX=sr.left-br.left+38,startY=sr.top-br.top+2;
- for(let n=0;n<targets.length;n++){
-   let {c,i}=targets[n],col=colEl(c),tr=col.getBoundingClientRect(),ys=offsets(state.cols[c]),f=document.createElement('div');
-   f.className='card back';f.style.background=cardBackStyle(prefs.cardBack);f.style.position='absolute';f.style.zIndex=1700+n;f.style.width=tr.width+'px';f.style.left=startX+'px';f.style.top=startY+'px';board.appendChild(f);
-   let tx=(tr.left-br.left)-startX,ty=(tr.top-br.top+(ys[i]||0))-startY;
-   f.animate([{transform:'translate(0,0)'},{transform:`translate(${tx}px,${ty}px)`}],{duration:150,easing:'cubic-bezier(.2,.8,.25,1)',fill:'forwards'});
+ const br=board.getBoundingClientRect(),sr=stockEl.getBoundingClientRect(),startX=sr.left-br.left+38,startY=sr.top-br.top+2,flyers=[];
+ for(let c=0;c<10;c++){
+   let cards=state.cols[c],i=cards.length-1,card=cards[i],real=cardEl(c,i),col=colEl(c);
+   if(!card||!real||!col)continue;
+   real.style.visibility='hidden';
+   let tr=real.getBoundingClientRect(),f=document.createElement('div');
+   f.className='card face has-index';f.innerHTML=faceHTML(card);f.style.position='absolute';f.style.zIndex=1700+c;f.style.width=tr.width+'px';f.style.left=startX+'px';f.style.top=startY+'px';board.appendChild(f);flyers.push({f,real});
+   let tx=(tr.left-br.left)-startX,ty=(tr.top-br.top)-startY;
+   f.animate([{transform:'translate(0,0)'},{transform:`translate(${tx}px,${ty}px)`}],{duration:190,easing:'cubic-bezier(.2,.8,.25,1)',fill:'forwards'});
    dealTick();
-   setTimeout(()=>f.remove(),165);
-   await sleep(27);
+   await sleep(55);
  }
- await sleep(170);render();animating=false;resetInactivity()
+ await sleep(210);
+ flyers.forEach(({f,real})=>{f.remove();real.style.visibility=''});
+ render();animating=false;resetInactivity()
 }
 function newGame(animateDeal=true){cancelHint();closeStuckPopup();pendingProgressSummary=null;lastStuckSignature='';developerStuckTest=false;stopClock();started=false;history=[];selected=null;developerGame=false;let d=deck(),rng=dailyMode?seededRandom(seedFromString(`spider-${dailyDate}-${prefs.suits}`)):Math.random;shuffle(d,rng);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,completedSuits:[],elapsed:0,undoUsed:false,challengeIds:(pendingNextChallenges||chooseDealChallenges()).slice(),maxSameSuitStackMoved:0,dealsUsed:0,firstSuitDealsUsed:null};pendingNextChallenges=null;status.textContent=`${prefs.suits===4?'4-Suit':prefs.suits===2?'2-Suit':'1-Suit'} game. Tap a movable card or stack.`;render();if(animateDeal)animateOpeningDeal();else resetInactivity()}
 function movable(c,i){let a=state.cols[c];if(i<0||!a[i]?.faceUp)return false;for(let x=i;x<a.length-1;x++)if(!a[x+1].faceUp||val(a[x].rank)!==val(a[x+1].rank)+1||(prefs.suits>1&&(a[x].suit||'♠')!==(a[x+1].suit||'♠')))return false;return true}
@@ -930,9 +932,10 @@ if(hintRun)cancelHint('Hint tour stopped.');if(animating)return;
 if(state.stock.length<10){toast('No deals remaining');feedback('invalid','error');return}
 remember();startClock();animating=true;selected=null;
 const br=board.getBoundingClientRect(), sr=stockEl.getBoundingClientRect(), flyers=[];
+const incoming=state.stock.slice(-10).reverse();
 for(let c=0;c<10;c++){
- const col=colEl(c), tr=col.getBoundingClientRect(), f=document.createElement('div');
- f.className='card back';f.style.background=cardBackStyle(prefs.cardBack);f.style.position='absolute';f.style.zIndex=1600+c;f.style.width=tr.width+'px';
+ const col=colEl(c), tr=col.getBoundingClientRect(), f=document.createElement('div'), incomingCard=incoming[c];
+ f.className='card face has-index';f.innerHTML=faceHTML(incomingCard);f.style.position='absolute';f.style.zIndex=1600+c;f.style.width=tr.width+'px';
  f.style.left=(sr.left-br.left+38)+'px';f.style.top=(sr.top-br.top+2)+'px';board.appendChild(f);flyers.push(f);
  const tx=(tr.left-br.left)-(sr.left-br.left+38), ty=(tr.top-br.top+(state.cols[c].length?offsets(state.cols[c]).slice(-1)[0]+27:0))-(sr.top-br.top+2);
  f.animate([{transform:'translate(0,0)'},{transform:`translate(${tx}px,${ty}px)`}],{duration:190,delay:c*32,easing:'cubic-bezier(.2,.8,.25,1)',fill:'forwards'});
@@ -966,7 +969,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.14.2');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.14.3');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
