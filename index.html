@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.13.2</title>
+<title>Spider Solitaire 1.0J.13.3</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -63,6 +63,11 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .web-bar{height:12px;margin-top:9px;border-radius:999px;background:#001b13;border:1px solid #ffffff26;overflow:hidden}.web-fill{height:100%;width:0;background:linear-gradient(90deg,#b98d35,#efd58e);border-radius:999px;transition:width .9s cubic-bezier(.2,.8,.25,1)}
 .progress-sub{display:flex;justify-content:space-between;margin-top:6px;font-size:10px;opacity:.68}.web-total{font-weight:900;color:#efd58e}
 .achievement-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;padding-bottom:18px}.achievement-card{min-height:112px;padding:12px;border:1px solid #ffffff28;border-radius:13px;background:#ffffff0b}.achievement-card.unlocked{border-color:#e8c87988;background:#e8c87910}.achievement-icon{font-size:25px}.achievement-card h3{margin:5px 0 3px;color:#efd58e;font:700 14px/1.08 Georgia,serif;letter-spacing:-.15px}.achievement-card p{margin:0;font-size:10px;line-height:1.35;opacity:.72}.achievement-reward{margin-top:7px;font-size:11px;font-weight:900;color:#efd58e}.achievement-state{font-size:9px;opacity:.55;margin-top:3px}
+.results-mode{margin:-2px 0 10px;font-size:12px;font-weight:900;color:#efd58e;letter-spacing:.35px}
+.results-grid{display:grid;grid-template-columns:1.15fr .85fr .85fr;gap:6px;margin:10px 0 12px;padding:10px;border:1px solid #ffffff24;border-radius:12px;background:#001d14}
+.results-grid div{font-size:11px;padding:3px 0}.results-grid .rh{font-weight:900;color:#efd58e}.results-grid .label{text-align:left;opacity:.72}.results-grid .val{text-align:center;font-weight:900}
+.challenge-panel{margin:12px 0;padding:13px;border:1px solid #e8c87977;border-radius:14px;background:#001f16}.challenge-panel h3{margin:0 0 4px;color:#efd58e;font:700 22px Georgia,serif}.challenge-intro{font-size:11px;opacity:.72;margin-bottom:10px}
+.challenge-item{display:grid;grid-template-columns:30px 1fr auto;gap:8px;align-items:center;padding:9px 0;border-top:1px solid #ffffff18}.challenge-item:first-of-type{border-top:0}.challenge-icon{font-size:20px}.challenge-name{font-size:12px;font-weight:900}.challenge-desc{font-size:10px;opacity:.68;margin-top:2px}.challenge-webs{font-size:12px;font-weight:900;color:#efd58e;white-space:nowrap}.challenge-max{text-align:center;margin-top:9px;font-size:11px;font-weight:900;color:#efd58e}
 .reward-box{margin:12px 0;padding:11px;border:1px solid #e8c87955;border-radius:13px;background:#001f16}.reward-line{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:12px}.reward-line b{color:#efd58e}.reward-total{border-top:1px solid #ffffff22;margin-top:5px;padding-top:8px;font-weight:900}
 .level-up{margin:10px 0;padding:8px;border-radius:999px;background:#e8c87922;border:1px solid #e8c879;color:#efd58e;font-weight:900}
 .new-achievements{margin:10px 0;font-size:11px;color:#efd58e;font-weight:800;line-height:1.5}
@@ -87,7 +92,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.13.2</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.13.3</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -194,10 +199,27 @@ function achievementMet(a,s,p,won){
  if(a.id==='suits25')return p.totalSuits>=25;
  return false
 }
+function nextDealChallenges(){
+ let x=challengeTargets(prefs.suits);
+ return [{icon:'🎯',name:'Efficient Web',desc:`Win in ${x.moves} moves or fewer`,reward:2},{icon:'⏱️',name:'Speed Web',desc:`Win in ${fmt(x.time)} or faster`,reward:2},{icon:'↶',name:'Clean Victory',desc:'Win the deal without using Undo',reward:2}]
+}
+function challengesHTML(){
+ let a=nextDealChallenges();
+ return `<div class="challenge-panel"><h3>Next Deal Challenges</h3><div class="challenge-intro">${difficultyName(prefs.suits)} · Complete optional goals for bonus Webs.</div>${a.map(c=>`<div class="challenge-item"><div class="challenge-icon">${c.icon}</div><div><div class="challenge-name">${c.name}</div><div class="challenge-desc">${c.desc}</div></div><div class="challenge-webs">+${c.reward} 🕸️</div></div>`).join('')}<div class="challenge-max">Up to +${a.reduce((n,c)=>n+c.reward,0)} bonus Webs</div></div>`
+}
+function showNextDealChallenges(){
+ document.querySelector('.win-overlay,.challenge-overlay')?.remove();let o=document.createElement('div');o.className='win-overlay challenge-overlay';
+ o.innerHTML=`<div class="win-panel"><h2>Ready for the Next Deal?</h2>${challengesHTML()}<button id="startNextDeal">Start Next Deal</button><button id="challengeSettings" class="collection-btn">Settings</button></div>`;board.appendChild(o);
+ o.querySelector('#startNextDeal').onclick=()=>{o.remove();dailyMode=false;dailyDate=null;newGame()};o.querySelector('#challengeSettings').onclick=()=>{o.remove();showSettings()}
+}
+function personalBestHTML(summary){
+ if(!summary||!summary.bests)return '';let b=summary.bests,score=gameScore();
+ return `<div class="results-grid"><div class="rh"></div><div class="rh">You</div><div class="rh">Best</div><div class="label">Score</div><div class="val">${score}</div><div class="val">${b.score==null?'—':b.score}</div><div class="label">Time</div><div class="val">${fmt(state.elapsed)}</div><div class="val">${b.time==null?'—':fmt(b.time)}</div><div class="label">Moves</div><div class="val">${state.moves}</div><div class="val">${b.moves==null?'—':b.moves}</div></div>`
+}
 function previewProgressReward(won=true){
  let p=getProgress(),before=p.webs,lines=[],base=0,targets=challengeTargets(prefs.suits);
  if(state.completed>0){base+=state.completed;lines.push([`${state.completed} completed suit${state.completed===1?'':'s'}`,state.completed])}
- if(won){base+=3;lines.push(['Game won',3]);let diff=prefs.suits===4?4:prefs.suits===2?2:0;if(diff){base+=diff;lines.push([`${prefs.suits}-Suit difficulty bonus`,diff])}if(state.moves<=targets.moves){base+=2;lines.push([`Move challenge · ${targets.moves} or fewer`,2])}if(state.elapsed<=targets.time){base+=2;lines.push([`Time challenge · ${fmt(targets.time)} or faster`,2])}if(dailyMode){base+=3;lines.push(['Daily Challenge',3])}}
+ if(won){base+=3;lines.push(['Game won',3]);let diff=prefs.suits===4?4:prefs.suits===2?2:0;if(diff){base+=diff;lines.push([`${prefs.suits}-Suit difficulty bonus`,diff])}if(state.moves<=targets.moves){base+=2;lines.push([`Move challenge · ${targets.moves} or fewer`,2])}if(state.elapsed<=targets.time){base+=2;lines.push([`Time challenge · ${fmt(targets.time)} or faster`,2])}if(!state.undoUsed){base+=2;lines.push(['Clean Victory · no Undo',2])}if(dailyMode){base+=3;lines.push(['Daily Challenge',3])}}
  let after=before+base;
  return {before,after,earned:base,lines,unlocked:[],beforeLevel:levelInfo(before),afterLevel:levelInfo(after),preview:true}
 }
@@ -208,6 +230,7 @@ function awardProgress(won,s){
   let diff=prefs.suits===4?4:prefs.suits===2?2:0;if(diff){base+=diff;lines.push([`${prefs.suits}-Suit difficulty bonus`,diff])}
   if(state.moves<=targets.moves){base+=2;lines.push([`Move challenge · ${targets.moves} or fewer`,2])}
   if(state.elapsed<=targets.time){base+=2;lines.push([`Time challenge · ${fmt(targets.time)} or faster`,2])}
+  if(!state.undoUsed){base+=2;lines.push(['Clean Victory · no Undo',2])}
   if(dailyMode){base+=3;lines.push(['Daily Challenge',3])}
  }
  p.totalSuits=(p.totalSuits||0)+state.completed;p.webs+=base;
@@ -222,7 +245,7 @@ function recordFinishedGame(won){
  if(developerGame){pendingProgressSummary=won?previewProgressReward(true):null;return pendingProgressSummary}let s=getPlayerStats(),score=gameScore();s.gamesPlayed++;
  if(won){recordWinDay();s.wins++;s.currentStreak++;s.bestStreak=Math.max(s.bestStreak,s.currentStreak);s.bestTime=s.bestTime==null?state.elapsed:Math.min(s.bestTime,state.elapsed);s.fewestMoves=s.fewestMoves==null?state.moves:Math.min(s.fewestMoves,state.moves);s.bestScore=s.bestScore==null?score:Math.max(s.bestScore,score)}else s.currentStreak=0;
  s.history.unshift({won,score,moves:state.moves,time:state.elapsed,suits:prefs.suits,daily:!!dailyMode,completed:state.completed,at:Date.now()});s.history=s.history.slice(0,10);setPlayerStats(s);
- pendingProgressSummary=awardProgress(won,s);return pendingProgressSummary
+ pendingProgressSummary=awardProgress(won,s);if(won)pendingProgressSummary.bests={score:s.bestScore,time:s.bestTime,moves:s.fewestMoves};return pendingProgressSummary
 }
 const PREFS_KEY='spider-solitaire-preferences';
 const tableThemes={classic:{name:'Classic Green',felt1:'#075534',felt2:'#06462e',felt3:'#043723',shell:'#0b2018'},blue:{name:'Midnight Blue',felt1:'#164f73',felt2:'#0d3d5d',felt3:'#082d46',shell:'#0a1c29'},burgundy:{name:'Casino Red',felt1:'#8a2636',felt2:'#6b1928',felt3:'#45101b',shell:'#260a10'},charcoal:{name:'Casino Black',felt1:'#34383a',felt2:'#24282a',felt3:'#151819',shell:'#0c0e0f'}};
@@ -420,7 +443,7 @@ function devRealProgressTest(){
  cancelHint();clearTimeout(inactivityTimer);
  let p=getProgress(),before=p.webs,beforeLevel=levelInfo(before),lines=[],earned=0,unlocked=[];
  const add=(label,n)=>{earned+=n;lines.push([label,n])};
- add('Test game won',3);add('Test completed suits',8);add('Test move challenge',2);add('Test time challenge',2);
+ add('Test game won',3);add('Test completed suits',8);add('Test move challenge',2);add('Test time challenge',2);add('Test clean victory',2);
  let a=ACHIEVEMENTS.find(x=>x.id==='first-win');
  if(a&&!p.achievements[a.id]){p.achievements[a.id]=Date.now();add(`Achievement · ${a.name}`,a.reward);unlocked.push(a)}
  p.webs+=earned;p.totalSuits=(p.totalSuits||0)+8;setProgress(p);
@@ -472,7 +495,7 @@ function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60)
 function startClock(){if(started)return;started=true;startAt=Date.now()-state.elapsed*1000;timerId=setInterval(()=>{state.elapsed=Math.floor((Date.now()-startAt)/1000);stats();saveGame()},1000)}
 function stopClock(){clearInterval(timerId);timerId=null} function stats(){movesEl.textContent=state.moves;scoreEl.textContent=Math.max(0,500-state.moves+state.completed*100);timerEl.textContent=fmt(state.elapsed)}
 function cancelHint(msg=''){if(!hintRun)return;hintRun.cancelled=true;hintRun=null;hintCounter.hidden=true;document.querySelectorAll('.motion-stack').forEach(x=>x.remove());animating=false;if(msg)status.textContent=msg}
-function newGame(){cancelHint();closeStuckPopup();pendingProgressSummary=null;lastStuckSignature='';developerStuckTest=false;stopClock();started=false;history=[];selected=null;developerGame=false;let d=deck(),rng=dailyMode?seededRandom(seedFromString(`spider-${dailyDate}-${prefs.suits}`)):Math.random;shuffle(d,rng);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,completedSuits:[],elapsed:0};status.textContent=`${prefs.suits===4?'4-Suit':prefs.suits===2?'2-Suit':'1-Suit'} game. Tap a movable card or stack.`;render();resetInactivity()}
+function newGame(){cancelHint();closeStuckPopup();pendingProgressSummary=null;lastStuckSignature='';developerStuckTest=false;stopClock();started=false;history=[];selected=null;developerGame=false;let d=deck(),rng=dailyMode?seededRandom(seedFromString(`spider-${dailyDate}-${prefs.suits}`)):Math.random;shuffle(d,rng);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,completedSuits:[],elapsed:0,undoUsed:false};status.textContent=`${prefs.suits===4?'4-Suit':prefs.suits===2?'2-Suit':'1-Suit'} game. Tap a movable card or stack.`;render();resetInactivity()}
 function movable(c,i){let a=state.cols[c];if(i<0||!a[i]?.faceUp)return false;for(let x=i;x<a.length-1;x++)if(!a[x+1].faceUp||val(a[x].rank)!==val(a[x+1].rank)+1||(prefs.suits>1&&(a[x].suit||'♠')!==(a[x+1].suit||'♠')))return false;return true}
 function legal(f,i,t){if(f===t||!movable(f,i))return false;let m=state.cols[f][i],d=state.cols[t];return !d.length||val(d[d.length-1].rank)===val(m.rank)+1}
 function flip(c){let a=state.cols[c];if(a.length&&!a[a.length-1].faceUp){a[a.length-1].faceUp=true;a[a.length-1]._justFlipped=true}}
@@ -502,7 +525,7 @@ function showCollection(){
 async function celebrateWin(){
  stopClock();started=false;saveGame();let chosen=nextCelebration(),fresh=unlockCelebration(chosen.id);let stage=document.createElement('div');stage.className='celebration-stage';board.appendChild(stage);await playCelebration(stage,chosen.id);stage.remove();
  let summary=pendingProgressSummary;pendingProgressSummary=null;
- let o=document.createElement('div');o.className='win-overlay';o.innerHTML=`<div class="win-panel"><h2>You Won!</h2><p>Score <b>${Math.max(0,500-state.moves+state.completed*100)}</b> · Moves <b>${state.moves}</b> · Time <b>${fmt(state.elapsed)}</b></p>${fresh?`<div class="unlock-badge">★ New Celebration Unlocked</div>`:''}${rewardSummaryHTML(summary)}<p style="color:#efd58e;font-weight:800">${chosen.name}</p><button id="again">New Game</button><button id="achievements" class="collection-btn">Achievements</button></div>`;board.appendChild(o);requestAnimationFrame(()=>requestAnimationFrame(()=>{let f=o.querySelector('.reward-progress');if(f)f.style.width=(+f.dataset.pct||0)+'%'}));o.querySelector('#again').onclick=()=>{o.remove();newGame()};o.querySelector('#achievements').onclick=()=>{o.remove();showAchievements()}
+ let o=document.createElement('div');o.className='win-overlay';o.innerHTML=`<div class="win-panel"><h2>Victory Results</h2><div class="results-mode">${prefs.suits===4?'4-Suit · Hard':prefs.suits===2?'2-Suit · Medium':'1-Suit · Easy'}${dailyMode?' · Daily Challenge':''}</div>${personalBestHTML(summary)}${fresh?`<div class="unlock-badge">★ New Celebration Unlocked</div>`:''}${rewardSummaryHTML(summary)}<p style="color:#efd58e;font-weight:800">${chosen.name}</p><button id="again">Continue</button><button id="achievements" class="collection-btn">Achievements</button></div>`;board.appendChild(o);requestAnimationFrame(()=>requestAnimationFrame(()=>{let f=o.querySelector('.reward-progress');if(f)f.style.width=(+f.dataset.pct||0)+'%'}));o.querySelector('#again').onclick=()=>{o.remove();showNextDealChallenges()};o.querySelector('#achievements').onclick=()=>{o.remove();showAchievements()}
 }
 
 async function animateCompletion(pc){
@@ -830,19 +853,19 @@ if(hintRun)cancelHint('Hint tour stopped.');if(animating||!history.length)return
 const previous=history[history.length-1],current=copy();animating=true;selected=null;let found=null;
 for(let from=0;from<10&&!found;from++)for(let to=0;to<10&&!found;to++){if(from===to)continue;let cf=current.cols[from],pf=previous.cols[from],ct=current.cols[to],pt=previous.cols[to];if(pf.length>cf.length&&ct.length>pt.length){let n=pf.length-cf.length;if(n===ct.length-pt.length)found={from,to,index:ct.length-n,n}}}
 if(found){render();let h=motionStack(found.to,found.index),src=cardEl(found.to,found.index);if(h&&src){let sr=src.getBoundingClientRect(),br=board.getBoundingClientRect(),dr=colEl(found.from).getBoundingClientRect(),baseCount=previous.cols[found.from].length-found.n,ys=offsets(previous.cols[found.from]),targetY=baseCount>0?ys[baseCount]:0,dx=(dr.left-br.left)-(sr.left-br.left),dy=(dr.top-br.top+targetY)-(sr.top-br.top);current.cols[found.to].slice(found.index).forEach((_,n)=>{let e=cardEl(found.to,found.index+n);if(e)e.style.visibility='hidden'});await h.animate([{transform:'translate(0,0)'},{transform:`translate(${dx}px,${dy}px)`}],{duration:190,easing:'cubic-bezier(.2,.8,.25,1)',fill:'forwards'}).finished.catch(()=>{});h.remove()}}else await sleep(90);
-history.pop();state=previous;animating=false;status.textContent='Last action undone.';render()
+history.pop();state=previous;state.undoUsed=true;animating=false;status.textContent='Last action undone.';render()
 }
 undoBtn.onclick=()=>{resetInactivity();undo()};hintBtn.onclick=runHints;stockControl.onclick=()=>{resetInactivity();deal()};
 const askNew=()=>{
- cancelHint();if(!hasProgress()){newGame();return}
- if(confirm('Start a new deal? Your current game will be replaced.')){if(!developerGame)recordFinishedGame(false);newGame()}
+ cancelHint();if(!hasProgress()){showNextDealChallenges();return}
+ if(confirm('Start a new deal? Your current game will be replaced.')){if(!developerGame)recordFinishedGame(false);showNextDealChallenges()}
 };
 newBtn.onclick=askNew;newBottom.onclick=askNew;
 $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.13.2');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.13.3');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
