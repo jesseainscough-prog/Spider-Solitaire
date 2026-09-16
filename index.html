@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.16.9</title>
+<title>Spider Solitaire 1.0J.16.10</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -123,7 +123,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.9</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.10</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -154,7 +154,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.9'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.10'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -762,6 +762,7 @@ function moveCompletesSuit(f,i,to){
  let q=sim.slice(-13);
  if(!q.every(x=>x.faceUp))return false;
  for(let x=0;x<12;x++)if(val(q[x].rank)!==val(q[x+1].rank)+1)return false;
+ if(prefs.suits>1&&!q.every(x=>(x.suit||'♠')===(q[0].suit||'♠')))return false;
  return true;
 }
 function breaksBuiltRun(f,i){
@@ -839,47 +840,47 @@ function legalMoves(){
            destructive:breaksBuiltRun(f,i)&&!moveCompletesSuit(f,i,to)});
  return a;
 }
-function hintProgress(m){
+function hintFacts(m){
  let s=state.cols[m.from],moving=s.slice(m.index),d=state.cols[m.to],top=d[d.length-1];
  let exposesHidden=m.index>0&&!s[m.index-1].faceUp;
- let emptiesSource=m.index===0,destinationEmpty=d.length===0;
- if(emptiesSource&&destinationEmpty)return false;
+ let emptiesSource=m.index===0&&d.length>0;
+ let destinationEmpty=d.length===0;
  let completes=moveCompletesSuit(m.from,m.index,m.to);
  let sameSuitJoin=!!top&&((top.suit||'♠')===((moving[0]?.suit)||'♠'));
+ let mixedJoin=!!top&&!sameSuitJoin;
  let breaks=breaksBuiltRun(m.from,m.index);
- let createsNetEmpty=emptiesSource&&!destinationEmpty;
- let usefulEmpty=destinationEmpty&&(exposesHidden||moving.length>=2);
-
- // Multi-suit hints are strategic recommendations, not a tour of every legal move.
- // Never recommend breaking a built same-suit run unless the move completes a suit.
- if(prefs.suits>1&&breaks&&!completes)return false;
-
- // Mixed-suit placements stay legal for the player, but Hint only recommends one
- // when it exposes a hidden card or creates a genuinely useful empty column.
- if(prefs.suits>1&&top&&!sameSuitJoin&&!completes&&!exposesHidden&&!createsNetEmpty)return false;
-
- let joinsRun=sameSuitJoin&&resultingRunLength(m.from,m.index,m.to)>moving.length;
- let meaningfulJoin=joinsRun&&(topRunLength(m.to)>=1||moving.length>=1);
- return completes||exposesHidden||createsNetEmpty||usefulEmpty||meaningfulJoin;
+ let runGain=sameSuitJoin?Math.max(0,resultingRunLength(m.from,m.index,m.to)-moving.length):0;
+ return {exposesHidden,emptiesSource,destinationEmpty,completes,sameSuitJoin,mixedJoin,breaks,runGain,movingCount:moving.length};
+}
+function hintProgress(m){
+ let f=hintFacts(m);
+ if(f.completes)return true;
+ if(f.breaks)return false;
+ if(f.destinationEmpty)return f.exposesHidden||f.movingCount>=2;
+ if(prefs.suits>1&&f.mixedJoin&&!f.exposesHidden&&!f.emptiesSource)return false;
+ return f.exposesHidden||f.emptiesSource||f.sameSuitJoin;
+}
+function hintScore(m){
+ let f=hintFacts(m),score=m.score;
+ if(f.completes)score+=1000000;
+ if(f.exposesHidden)score+=120000;
+ if(f.emptiesSource)score+=70000;
+ if(f.sameSuitJoin)score+=50000+f.runGain*5000;
+ if(f.destinationEmpty)score+=(f.exposesHidden?25000:(f.movingCount>=2?7000:-30000));
+ if(f.mixedJoin)score-=prefs.suits>1?45000:3000;
+ if(f.breaks)score-=500000;
+ score+=Math.min(f.movingCount,12)*350;
+ return score;
 }
 function allMoves(){
  let legalList=legalMoves().filter(m=>{
-  let sourceBecomesEmpty=m.index===0;
-  let destinationEmpty=state.cols[m.to].length===0;
+  let sourceBecomesEmpty=m.index===0,destinationEmpty=state.cols[m.to].length===0;
   return !(sourceBecomesEmpty&&destinationEmpty);
  });
- let preferred=legalList.filter(m=>!m.destructive&&hintProgress(m));
- let a=prefs.suits>1?preferred:(preferred.length?preferred:legalList);
- a.sort((x,y)=>{
-  if(prefs.suits>1){
-   let xm=state.cols[x.from][x.index],xd=state.cols[x.to],xt=xd[xd.length-1];
-   let ym=state.cols[y.from][y.index],yd=state.cols[y.to],yt=yd[yd.length-1];
-   let xs=!!xt&&((xt.suit||'♠')===(xm.suit||'♠'));
-   let ys=!!yt&&((yt.suit||'♠')===(ym.suit||'♠'));
-   if(xs!==ys)return ys-xs;
-  }
-  return y.score-x.score;
- });
+ let strategic=legalList.filter(m=>hintProgress(m));
+ let a=strategic.length?strategic:(prefs.suits===1?legalList.filter(m=>!m.destructive):[]);
+ a.forEach(m=>m.hintScore=hintScore(m));
+ a.sort((x,y)=>y.hintScore-x.hintScore);
  let seen=new Set();
  return a.filter(m=>{let k=`${m.from}-${m.index}-${m.to}`;if(seen.has(k))return false;seen.add(k);return true});
 }
@@ -935,19 +936,25 @@ function showStuckPopup(canDeal,force=false){
  board.appendChild(o);o.querySelector('.stuck-secondary').onclick=()=>{o.remove();lastStuckSignature='';resetInactivity()};o.querySelector('.stuck-primary').onclick=()=>{o.remove();if(hasProgress()&&!developerGame)recordFinishedGame(false);dailyMode=false;dailyDate=null;newGame();resetInactivity()};
 }
 function checkForStuck(){if(!state||(developerGame&&!developerStuckTest))return false;if(animating||hintRun||document.querySelector('.settings-overlay,.daily-invite,.celebration-stage,.win-overlay')){resetInactivity();return false}let legal=legalMoves(),useful=allMoves();if(legal.length&&useful.length)return false;showStuckPopup(state.stock.length>=10);return true}
-async function runHints(){cardFlick();metric('hints');trackEvent('hint_requested');resetInactivity();if(hintRun){cancelHint('Hint tour stopped.');return}let legalList=legalMoves();if(!legalList.length){status.textContent=state.stock.length>=10?'No tableau moves available. Deal the next row.':'No more legal moves.';showStuckPopup(state.stock.length>=10,true);return}let ranked=allMoves(),emptyHints=ranked.filter(m=>state.cols[m.to].length===0),list=ranked.filter(m=>state.cols[m.to].length!==0).slice(0,5);
-if(emptyHints.length){
- status.textContent='Move cards to an empty column.';
- showStuckMessage('Move cards to an empty column');
-}
-if(!list.length){
- if(emptyHints.length)return;
- status.textContent=state.stock.length>=10?'No useful tableau moves. Deal the next row.':'No useful move found for this position.';
- if(state.stock.length>=10)showStuckPopup(true,true);else showStuckPopup(false,true);
- return
-}
-let run={cancelled:false};hintRun=run;animating=true;status.textContent=`Showing ${list.length} possible move${list.length===1?'':'s'}…`;for(let n=0;n<list.length;n++){if(run.cancelled)break;await animatePreview(list[n],run,n+1,list.length)}if(!run.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent=emptyHints.length?'Hint tour complete. You can also move cards to an empty column.':'Hint tour complete. Make any move you like.'}}
-async function revealCardFlip(el,card){
+async function runHints(){
+ cardFlick();metric('hints');trackEvent('hint_requested');resetInactivity();
+ if(hintRun){cancelHint('Hint stopped.');return}
+ let legalList=legalMoves();
+ if(!legalList.length){
+  status.textContent=state.stock.length>=10?'No tableau moves available. Deal the next row.':'No more legal moves.';
+  showStuckPopup(state.stock.length>=10,true);return
+ }
+ let ranked=allMoves(),m=ranked[0];
+ if(!m){
+  status.textContent=state.stock.length>=10?'No useful tableau move. Deal the next row.':'No useful move found for this position.';
+  if(state.stock.length>=10)showStuckPopup(true,true);else showStuckPopup(false,true);
+  return
+ }
+ let hint={cancelled:false};hintRun=hint;animating=true;
+ status.textContent=state.cols[m.to].length===0?'Hint: use the empty column.':'Showing best move…';
+ await animatePreview(m,hint,1,1);
+ if(!hint.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent='Hint complete.'}
+}async function revealCardFlip(el,card){
  if(!el||!card)return;
  el.classList.remove('covered');
  let back=document.createElement('div'),edge=document.createElement('div');
@@ -1082,7 +1089,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.9');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.10');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
