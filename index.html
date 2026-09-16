@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.16.11</title>
+<title>Spider Solitaire 1.0J.17.0</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -110,7 +110,11 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .stuck-banner .stuck-close{flex:0 0 auto;width:32px;height:32px;border:0;background:transparent;color:#fff;font-size:23px;line-height:1;opacity:.85}.stuck-card{width:min(340px,92vw);background:#0b2b20;border:1px solid #e8c87988;border-radius:18px;padding:22px;text-align:center;box-shadow:0 18px 50px #0009}.stuck-card h2{margin:0 0 8px;color:#efd58e;font:700 25px Georgia,serif}.stuck-card p{margin:0 0 16px;line-height:1.45}.stuck-actions{display:flex;gap:9px}.stuck-actions button{flex:1;padding:11px 8px;border-radius:10px;font-weight:800;border:1px solid #e8c879}.stuck-primary{background:#e5bd65;color:#173326}.stuck-secondary{background:#ffffff0c;color:#fff}.choice-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}.choice-card{border:2px solid #ffffff24;background:#ffffff0c;color:#fff;border-radius:13px;padding:10px;text-align:left}.choice-card.selected{border-color:#efd58e;box-shadow:0 0 0 1px #efd58e55}.felt-swatch{height:66px;border-radius:9px;margin-bottom:8px;border:1px solid #ffffff35}.choice-card b{font-size:13px}.choice-card small{display:block;opacity:.6;margin-top:3px}.cardback-swatch{height:72px;width:50px;margin:0 auto 8px;border-radius:6px;border:2px solid #e3edf7;box-shadow:0 2px 4px #0006}.toggle{position:relative;width:46px;height:27px;border-radius:14px;background:#ffffff28;flex:0 0 auto}.toggle.on{background:#d5b965}.toggle::after{content:"";position:absolute;width:21px;height:21px;left:3px;top:3px;border-radius:50%;background:#fff}.toggle.on::after{transform:translateX(19px)}
 
 
-.stats-head h2,.collection-head h2{text-align:center}.stats-close,.collection-close{min-width:42px;font-size:20px;line-height:1}</style>
+.stats-head h2,.collection-head h2{text-align:center}.stats-close,.collection-close{min-width:42px;font-size:20px;line-height:1}
+.monetization-panel{margin:12px 0 4px;padding:12px;border:1px solid rgba(232,200,121,.35);border-radius:12px;background:rgba(0,0,0,.12)}
+.monetization-panel button{border:1px solid rgba(232,200,121,.7);background:#123d2c;color:#fff;border-radius:10px;padding:9px 12px;font-weight:700;margin-top:8px}
+.monetization-panel small{display:block;margin-top:7px;line-height:1.35;color:#d8e4dd}
+</style>
 </head>
 <body>
 <main class="game-shell">
@@ -123,7 +127,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.11</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.17.0</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -143,6 +147,16 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 <script>
 /* J.15.0 local analytics/monetization foundation.
    No ads, network tracking, SDKs, or purchases are active yet. */
+
+const MONETIZATION_KEY='spider-solitaire-monetization-v1';
+const monetization=(()=>{try{return Object.assign({adsRemoved:false,completedDealsSinceAd:0,interstitialEvery:3},JSON.parse(localStorage.getItem(MONETIZATION_KEY)||'{}'))}catch(e){return {adsRemoved:false,completedDealsSinceAd:0,interstitialEvery:3}}})();
+function saveMonetization(){try{localStorage.setItem(MONETIZATION_KEY,JSON.stringify(monetization))}catch(e){}}
+function shouldShowInterstitial(){return !monetization.adsRemoved&&monetization.completedDealsSinceAd>=monetization.interstitialEvery}
+function noteCompletedDealForAds(){if(developerGame||monetization.adsRemoved)return false;monetization.completedDealsSinceAd++;saveMonetization();return shouldShowInterstitial()}
+function consumeInterstitialOpportunity(){if(!shouldShowInterstitial())return false;monetization.completedDealsSinceAd=0;saveMonetization();return true}
+function requestRemoveAds(){trackEvent('remove_ads_tapped');status.textContent='Remove Ads purchase will activate in the native App Store build.'}
+function nativeAdOpportunity(){return noteCompletedDealForAds()&&consumeInterstitialOpportunity()}
+
 const ANALYTICS_KEY='spider-solitaire-analytics-v1';
 function analyticsDefaults(){return {schema:1,createdAt:Date.now(),updatedAt:Date.now(),sessions:0,gameStarts:0,wins:0,hints:0,undos:0,deals:0,completedSuits:0,byDifficulty:{1:{starts:0,wins:0},2:{starts:0,wins:0},4:{starts:0,wins:0}},monetization:{interstitialEligible:0,interstitialShown:0,rewardedEligible:0,rewardedShown:0,removeAdsPurchases:0},events:[]}}
 function loadAnalytics(){try{let a=JSON.parse(localStorage.getItem(ANALYTICS_KEY)||'null'),d=analyticsDefaults();if(!a)return d;return Object.assign(d,a,{byDifficulty:Object.assign(d.byDifficulty,a.byDifficulty||{}),monetization:Object.assign(d.monetization,a.monetization||{})})}catch(e){return analyticsDefaults()}}
@@ -154,7 +168,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.11'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.17.0'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -367,6 +381,13 @@ function invalidCardJiggle(el){
  a.finished.catch(()=>{}).finally(()=>{el.style.zIndex=oldZ})
 }
 
+function ensureMonetizationSettings(){
+ let root=document.getElementById('settingsModal')||document.getElementById('settings')||document.querySelector('.settings-modal,.settings-panel');
+ if(!root||root.querySelector('.monetization-panel'))return;
+ let p=document.createElement('div');p.className='monetization-panel';
+ p.innerHTML='<strong>Ad-Free Play</strong><small>No banner ads will cover the game board. Release ads will appear only between deals at a light cadence.</small><button type="button" onclick="requestRemoveAds()">Remove Ads</button><small>One-time App Store purchase in the native build.</small>';
+ root.appendChild(p);
+}
 function applyPrefs(){let x=tableThemes[prefs.theme]||tableThemes.classic,r=document.documentElement;['felt1','felt2','felt3','shell'].forEach(k=>r.style.setProperty('--'+k,x[k]))}
 function cardBackStyle(id){return ({blue:'repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px)',red:'repeating-linear-gradient(45deg,#6d1522,#6d1522 3px,#a42b3b 3px,#a42b3b 6px)',black:'repeating-linear-gradient(45deg,#15191c,#15191c 3px,#343b40 3px,#343b40 6px)',green:'repeating-linear-gradient(45deg,#0b4c36,#0b4c36 3px,#167354 3px,#167354 6px)'})[id]||'repeating-linear-gradient(45deg,#103f75,#103f75 3px,#195c9b 3px,#195c9b 6px)'}
 function showTableauChooser(){document.querySelector('.settings-overlay')?.remove();let o=document.createElement('div');o.className='settings-overlay';o.innerHTML=`<div class="settings-head"><button class="nav-back">← Back</button><h2>Tableau Color</h2><button class="settings-close">×</button></div><div class="choice-grid">${Object.entries(tableThemes).map(([id,x])=>`<button class="choice-card ${prefs.theme===id?'selected':''}" data-theme="${id}"><div class="felt-swatch" style="background:linear-gradient(145deg,${x.felt1},${x.felt3})"></div><b>${x.name}</b><small>${prefs.theme===id?'Selected':'Tap to select'}</small></button>`).join('')}</div>`;board.appendChild(o);o.querySelector('.settings-close').onclick=()=>o.remove();o.querySelector('.nav-back').onclick=()=>{o.remove();showSettings()};o.querySelectorAll('[data-theme]').forEach(b=>b.onclick=()=>{prefs.theme=b.dataset.theme;setPrefs(prefs);applyPrefs();o.remove();showTableauChooser()})}
@@ -1104,7 +1125,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.11');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.17.0');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
@@ -1143,6 +1164,11 @@ try{
   toast('Startup error');
 }
 })();
+
+document.addEventListener('click',e=>{
+ let b=e.target.closest&&e.target.closest('button');
+ if(b&&/settings/i.test((b.textContent||'')+' '+(b.id||'')))setTimeout(ensureMonetizationSettings,0);
+},{passive:true});
 </script>
 </body>
 </html>
