@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.13.4</title>
+<title>Spider Solitaire 1.0J.13.5</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -68,6 +68,13 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .results-grid div{font-size:11px;padding:3px 0}.results-grid .rh{font-weight:900;color:#efd58e}.results-grid .label{text-align:left;opacity:.72}.results-grid .val{text-align:center;font-weight:900}
 .challenge-panel{margin:12px 0;padding:13px;border:1px solid #e8c87977;border-radius:14px;background:#001f16}.challenge-panel h3{margin:0 0 4px;color:#efd58e;font:700 22px Georgia,serif}.challenge-intro{font-size:11px;opacity:.72;margin-bottom:10px}
 .challenge-item{display:grid;grid-template-columns:30px 1fr auto;gap:8px;align-items:center;padding:9px 0;border-top:1px solid #ffffff18}.challenge-item:first-of-type{border-top:0}.challenge-icon{font-size:20px}.challenge-name{font-size:12px;font-weight:900}.challenge-desc{font-size:10px;opacity:.68;margin-top:2px}.challenge-webs{font-size:12px;font-weight:900;color:#efd58e;white-space:nowrap}.challenge-max{text-align:center;margin-top:9px;font-size:11px;font-weight:900;color:#efd58e}
+
+.postwin-panel{width:min(520px,calc(100% - 44px));max-height:calc(100% - 92px);padding:22px 20px 18px}
+.postwin-panel h2{margin:0 0 5px;font-size:34px}.postwin-step{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;opacity:.55;margin-bottom:8px}
+.postwin-actions{margin-top:14px}.postwin-actions button{width:100%}
+.postwin-panel .results-grid{margin:12px 0 4px;padding:12px}.postwin-panel .reward-box{margin:8px 0;padding:9px 11px}.postwin-panel .reward-line{padding:3px 0;font-size:11px}
+.postwin-panel .progress-card{margin:8px 0;padding:10px}.postwin-panel .challenge-panel{margin:8px 0;padding:10px}.postwin-panel .challenge-panel h3{font-size:19px}
+.postwin-panel .challenge-result{padding:6px 0}.postwin-panel .level-up{margin:8px 0;padding:6px}
 .challenge-result{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:7px 0;border-top:1px solid #ffffff18;font-size:11px}.challenge-result:first-child{border-top:0}.challenge-result.done{color:#efd58e}.challenge-result.missed{opacity:.55}.challenge-mark{font-weight:900;white-space:nowrap}
 
 .reward-box{margin:12px 0;padding:11px;border:1px solid #e8c87955;border-radius:13px;background:#001f16}.reward-line{display:flex;justify-content:space-between;gap:10px;padding:4px 0;font-size:12px}.reward-line b{color:#efd58e}.reward-total{border-top:1px solid #ffffff22;margin-top:5px;padding-top:8px;font-weight:900}
@@ -94,7 +101,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.13.4</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.13.5</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -253,10 +260,10 @@ function challengeResultsHTML(summary){
  if(!summary||!summary.challengeResults?.length)return '';
  return `<div class="challenge-panel"><h3>Deal Challenges</h3>${summary.challengeResults.map(c=>`<div class="challenge-result ${c.done?'done':'missed'}"><span>${c.done?'✓':'○'} ${c.name}</span><span class="challenge-mark">${c.done?'+'+c.reward+' 🕸️':'Missed'}</span></div>`).join('')}</div>`
 }
-function showNextDealChallenges(){
+function showNextDealChallenges(fromWin=false){
  document.querySelector('.win-overlay,.challenge-overlay')?.remove();pendingNextChallenges=chooseDealChallenges();let o=document.createElement('div');o.className='win-overlay challenge-overlay';
- o.innerHTML=`<div class="win-panel"><h2>Ready for the Next Deal?</h2>${challengesHTML()}<button id="startNextDeal">Start Next Deal</button><button id="challengeSettings" class="collection-btn">Settings</button></div>`;board.appendChild(o);
- o.querySelector('#startNextDeal').onclick=()=>{o.remove();dailyMode=false;dailyDate=null;newGame()};o.querySelector('#challengeSettings').onclick=()=>{o.remove();showSettings()}
+ o.innerHTML=`<div class="win-panel postwin-panel">${fromWin?'<div class="postwin-step">3 of 3 · Next Deal</div>':''}<h2>${fromWin?'Next Deal':'Ready for the Next Deal?'}</h2>${challengesHTML()}<div class="postwin-actions"><button id="startNextDeal">Start Next Deal</button></div></div>`;board.appendChild(o);
+ o.querySelector('#startNextDeal').onclick=()=>{o.remove();dailyMode=false;dailyDate=null;newGame()}
 }
 function personalBestHTML(summary){
  if(!summary||!summary.bests)return '';let b=summary.bests,score=gameScore();
@@ -268,7 +275,7 @@ function previewProgressReward(won=true){
  if(won){base+=3;lines.push(['Game won',3]);let diff=prefs.suits===4?4:prefs.suits===2?2:0;if(diff){base+=diff;lines.push([`${prefs.suits}-Suit difficulty bonus`,diff])}if(dailyMode){base+=3;lines.push(['Daily Challenge',3])}}
  let cr=challengeResults(won);cr.filter(c=>c.done).forEach(c=>{base+=c.reward;lines.push([`Challenge · ${c.name}`,c.reward])});
  let after=before+base;
- return {before,after,earned:base,lines,unlocked:[],challengeResults:cr,beforeLevel:levelInfo(before),afterLevel:levelInfo(after),preview:true}
+ return {before,after,earned:base,lines,unlocked:[],challengeResults:cr,bests:{score:Math.max(gameScore(),1450),time:Math.max(1,state.elapsed-18),moves:Math.max(1,state.moves-6)},beforeLevel:levelInfo(before),afterLevel:levelInfo(after),preview:true}
 }
 function awardProgress(won,s){
  let p=getProgress(),before=p.webs,lines=[],base=0;
@@ -325,6 +332,19 @@ function showAchievements(){
  document.querySelector('.settings-overlay')?.remove();let p=getProgress(),li=levelInfo(p.webs),o=document.createElement('div');o.className='settings-overlay';
  o.innerHTML=`<div class="settings-head"><button class="nav-back">← Back</button><h2>Achievements</h2><button class="settings-close">×</button></div>${progressCardHTML()}<div class="settings-note">Achievements award bonus Webs. Webs fill your level bar and carry forward permanently.</div><div class="achievement-grid">${ACHIEVEMENTS.map(a=>{let on=!!p.achievements[a.id];return `<div class="achievement-card ${on?'unlocked':''}"><div class="achievement-icon">${on?a.icon:'🔒'}</div><h3>${a.name}</h3><p>${a.desc}</p><div class="achievement-reward">+${a.reward} 🕸️</div><div class="achievement-state">${on?'Unlocked':'Locked'}</div></div>`}).join('')}</div>`;
  board.appendChild(o);o.querySelector('.settings-close').onclick=()=>o.remove();o.querySelector('.nav-back').onclick=()=>{o.remove();showSettings()}
+}
+
+function showVictoryResultsScreen(summary,chosen,fresh){
+ document.querySelector('.win-overlay')?.remove();let s=summary||{},b=s.bests||{};
+ let score=gameScore(),bestScore=b.score==null?score:b.score,bestTime=b.time==null?state.elapsed:b.time,bestMoves=b.moves==null?state.moves:b.moves;
+ let o=document.createElement('div');o.className='win-overlay';
+ o.innerHTML=`<div class="win-panel postwin-panel"><div class="postwin-step">1 of 3 · Results</div><h2>Victory Results</h2><div class="results-mode">${prefs.suits===4?'4-Suit · Hard':prefs.suits===2?'2-Suit · Medium':'1-Suit · Easy'}${dailyMode?' · Daily Challenge':''}</div><div class="results-grid"><div class="rh"></div><div class="rh">You</div><div class="rh">Best</div><div class="label">Score</div><div class="val">${score}</div><div class="val">${bestScore}</div><div class="label">Time</div><div class="val">${fmt(state.elapsed)}</div><div class="val">${fmt(bestTime)}</div><div class="label">Moves</div><div class="val">${state.moves}</div><div class="val">${bestMoves}</div></div>${fresh?`<div class="unlock-badge">★ New Celebration Unlocked</div>`:''}<p style="color:#efd58e;font-weight:800;margin:12px 0 4px">${chosen.name}</p><div class="postwin-actions"><button id="resultsContinue">Continue</button></div></div>`;
+ board.appendChild(o);o.querySelector('#resultsContinue').onclick=()=>{o.remove();showRewardsScreen(s,chosen)}
+}
+function showRewardsScreen(summary,chosen){
+ let o=document.createElement('div');o.className='win-overlay';
+ o.innerHTML=`<div class="win-panel postwin-panel"><div class="postwin-step">2 of 3 · Rewards</div><h2>Rewards & Progress</h2>${challengeResultsHTML(summary)}${rewardSummaryHTML(summary)}<div class="postwin-actions"><button id="rewardsContinue">Continue</button></div></div>`;
+ board.appendChild(o);requestAnimationFrame(()=>requestAnimationFrame(()=>{let f=o.querySelector('.reward-progress');if(f)f.style.width=(+f.dataset.pct||0)+'%'}));o.querySelector('#rewardsContinue').onclick=()=>{o.remove();showNextDealChallenges(true)}
 }
 function rewardSummaryHTML(summary){
  if(!summary)return '';let b=summary.beforeLevel,a=summary.afterLevel;
@@ -567,8 +587,7 @@ function showCollection(){
 }
 async function celebrateWin(){
  stopClock();started=false;saveGame();let chosen=nextCelebration(),fresh=unlockCelebration(chosen.id);let stage=document.createElement('div');stage.className='celebration-stage';board.appendChild(stage);await playCelebration(stage,chosen.id);stage.remove();
- let summary=pendingProgressSummary;pendingProgressSummary=null;
- let o=document.createElement('div');o.className='win-overlay';o.innerHTML=`<div class="win-panel"><h2>Victory Results</h2><div class="results-mode">${prefs.suits===4?'4-Suit · Hard':prefs.suits===2?'2-Suit · Medium':'1-Suit · Easy'}${dailyMode?' · Daily Challenge':''}</div>${personalBestHTML(summary)}${challengeResultsHTML(summary)}${fresh?`<div class="unlock-badge">★ New Celebration Unlocked</div>`:''}${rewardSummaryHTML(summary)}<p style="color:#efd58e;font-weight:800">${chosen.name}</p><button id="again">Continue</button><button id="achievements" class="collection-btn">Achievements</button></div>`;board.appendChild(o);requestAnimationFrame(()=>requestAnimationFrame(()=>{let f=o.querySelector('.reward-progress');if(f)f.style.width=(+f.dataset.pct||0)+'%'}));o.querySelector('#again').onclick=()=>{o.remove();showNextDealChallenges()};o.querySelector('#achievements').onclick=()=>{o.remove();showAchievements()}
+ let summary=pendingProgressSummary;pendingProgressSummary=null;showVictoryResultsScreen(summary,chosen,fresh)
 }
 
 async function animateCompletion(pc){
@@ -908,7 +927,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.13.4');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.13.5');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
