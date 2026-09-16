@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.16.10</title>
+<title>Spider Solitaire 1.0J.16.11</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -123,7 +123,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.10</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.16.11</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -154,7 +154,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.10'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.16.11'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -878,6 +878,13 @@ function allMoves(){
   return !(sourceBecomesEmpty&&destinationEmpty);
  });
  let strategic=legalList.filter(m=>hintProgress(m));
+ let sameSuitChoices=strategic.filter(m=>hintFacts(m).sameSuitJoin);
+ if(sameSuitChoices.length){
+  strategic=strategic.filter(m=>{
+   let f=hintFacts(m);
+   return f.sameSuitJoin||f.completes||f.exposesHidden||f.emptiesSource;
+  });
+ }
  let a=strategic.length?strategic:(prefs.suits===1?legalList.filter(m=>!m.destructive):[]);
  a.forEach(m=>m.hintScore=hintScore(m));
  a.sort((x,y)=>y.hintScore-x.hintScore);
@@ -944,16 +951,24 @@ async function runHints(){
   status.textContent=state.stock.length>=10?'No tableau moves available. Deal the next row.':'No more legal moves.';
   showStuckPopup(state.stock.length>=10,true);return
  }
- let ranked=allMoves(),m=ranked[0];
- if(!m){
+ let ranked=allMoves();
+ if(!ranked.length){
   status.textContent=state.stock.length>=10?'No useful tableau move. Deal the next row.':'No useful move found for this position.';
   if(state.stock.length>=10)showStuckPopup(true,true);else showStuckPopup(false,true);
   return
  }
- let hint={cancelled:false};hintRun=hint;animating=true;
- status.textContent=state.cols[m.to].length===0?'Hint: use the empty column.':'Showing best move…';
- await animatePreview(m,hint,1,1);
- if(!hint.cancelled){hintCounter.hidden=true;hintRun=null;animating=false;status.textContent='Hint complete.'}
+ // Keep the sequence useful and readable: show at most the three strongest distinct moves.
+ let hints=ranked.slice(0,3);
+ let run={cancelled:false};hintRun=run;animating=true;
+ status.textContent=hints.length>1?`Showing ${hints.length} best moves…`:'Showing best move…';
+ for(let n=0;n<hints.length;n++){
+  if(run.cancelled)break;
+  await animatePreview(hints[n],run,n+1,hints.length);
+ }
+ if(!run.cancelled){
+  hintCounter.hidden=true;hintRun=null;animating=false;
+  status.textContent=hints.length>1?'Hints complete.':'Hint complete.'
+ }
 }async function revealCardFlip(el,card){
  if(!el||!card)return;
  el.classList.remove('covered');
@@ -1089,7 +1104,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.10');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.16.11');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
