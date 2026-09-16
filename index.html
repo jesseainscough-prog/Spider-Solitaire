@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire 1.0J.17.14</title>
+<title>Spider Solitaire 1.0J.18.0</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -141,6 +141,18 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .new-deal-ad-note{margin-top:17px!important;margin-bottom:4px!important;font-size:12px!important;color:#c9c7bd!important}
 .new-deal-remove{display:block;margin:14px auto 0;border:0;background:transparent;color:var(--gold);font-size:13px;font-weight:700;padding:7px 12px;text-decoration:underline;text-underline-offset:3px}
 
+
+.adfree-purchase{position:fixed;inset:0;background:rgba(0,20,13,.78);display:flex;align-items:center;justify-content:center;padding:22px;z-index:3400}
+.adfree-purchase .panel{width:min(390px,94vw);background:linear-gradient(180deg,#073d2a,#052d20);border:1px solid rgba(232,200,121,.5);border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.55);padding:22px 20px 18px;text-align:center;position:relative}
+.adfree-purchase h2{margin:0 28px 10px;color:var(--gold);font-family:Georgia,serif;letter-spacing:1.3px;font-size:24px}
+.adfree-purchase .adfree-copy{margin:0 auto 17px;max-width:315px;color:#f7f3e8;line-height:1.45;font-size:15px}
+.adfree-purchase .adfree-price{font-family:Georgia,serif;color:#fff;font-size:28px;font-weight:700;margin:2px 0 15px}
+.adfree-purchase .adfree-buy{width:100%;min-height:48px;border-radius:11px;background:var(--gold);color:#172016;border:1px solid #f3da98;font-weight:800;font-size:16px}
+.adfree-purchase .adfree-restore{display:block;margin:9px auto 0;border:0;background:transparent;color:var(--gold);font-size:13px;font-weight:700;padding:7px 12px;text-decoration:underline;text-underline-offset:3px}
+.adfree-purchase .adfree-note{margin:9px auto 0;color:#bbb9b0;font-size:11px;line-height:1.35}
+.adfree-purchase .adfree-close{position:absolute;right:11px;top:10px;width:34px;height:34px;border:0;background:transparent;color:#eee;font-size:25px;line-height:30px}
+.adfree-success .adfree-check{font-size:38px;margin:2px 0 8px;color:var(--gold)}
+
 </style>
 </head>
 <body>
@@ -154,7 +166,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.17.14</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.18.0</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -189,9 +201,24 @@ const REMOVE_ADS_REMINDER_EVERY=5;
 function shouldOfferRemoveAds(adBreakCount){
  return !monetization.adsRemoved&&adBreakCount>0&&adBreakCount%REMOVE_ADS_REMINDER_EVERY===0;
 }
+function showAdFreeSuccess(){
+ let old=document.querySelector('.adfree-purchase');if(old)old.remove();
+ let o=document.createElement('div');o.className='adfree-purchase adfree-success';
+ o.innerHTML=`<div class="panel" role="dialog" aria-modal="true"><h2>PLAY AD FREE</h2><div class="adfree-check">✓</div><p class="adfree-copy">Ad-free play is enabled. Interstitial ads will no longer appear.</p><button type="button" class="adfree-buy">Continue Playing</button></div>`;
+ document.body.appendChild(o);let close=()=>o.remove();o.querySelector('.adfree-buy').onclick=close;o.onclick=e=>{if(e.target===o)close()};
+}
+function showAdFreePurchase(){
+ if(document.querySelector('.adfree-purchase'))return;
+ let o=document.createElement('div');o.className='adfree-purchase';
+ o.innerHTML=`<div class="panel" role="dialog" aria-modal="true"><button type="button" class="adfree-close" aria-label="Close">×</button><h2>PLAY AD FREE</h2><p class="adfree-copy">Enjoy Spider Solitaire without interstitial ads. One purchase unlocks ad-free play.</p><div class="adfree-price">$4.99</div><button type="button" class="adfree-buy">Play Ad Free</button><button type="button" class="adfree-restore">Restore Purchase</button><p class="adfree-note">Test purchase for this web build. App Store purchasing will replace this step in the native release.</p></div>`;
+ document.body.appendChild(o);let close=()=>o.remove();o.querySelector('.adfree-close').onclick=close;o.onclick=e=>{if(e.target===o)close()};
+ o.querySelector('.adfree-buy').onclick=()=>{monetization.adsRemoved=true;saveMonetization();trackEvent('remove_ads_test_purchase');o.remove();showAdFreeSuccess()};
+ o.querySelector('.adfree-restore').onclick=()=>{monetization.adsRemoved=true;saveMonetization();trackEvent('remove_ads_test_restore');o.remove();showAdFreeSuccess()};
+}
 function requestRemoveAds(){
  trackEvent('remove_ads_tapped');
- alert('Remove Ads will be a one-time App Store purchase in the native release.');
+ if(monetization.adsRemoved){showAdFreeSuccess();return}
+ showAdFreePurchase();
 }
 const ANALYTICS_KEY='spider-solitaire-analytics-v1';
 function analyticsDefaults(){return {schema:1,createdAt:Date.now(),updatedAt:Date.now(),sessions:0,gameStarts:0,wins:0,hints:0,undos:0,deals:0,completedSuits:0,byDifficulty:{1:{starts:0,wins:0},2:{starts:0,wins:0},4:{starts:0,wins:0}},monetization:{interstitialEligible:0,interstitialShown:0,rewardedEligible:0,rewardedShown:0,removeAdsPurchases:0},events:[]}}
@@ -204,7 +231,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.17.14'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.18.0'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -750,6 +777,7 @@ function showCollection(){
  board.appendChild(o);o.querySelector('.collection-close').onclick=()=>o.remove();o.querySelector('.nav-back').onclick=()=>{o.remove();showSettings()}
 }
 function showTestInterstitial(){
+ if(monetization.adsRemoved)return Promise.resolve();
  return new Promise(resolve=>{
   let o=document.createElement('div');o.className='test-ad-overlay';
   o.innerHTML=`<div class="test-ad-card"><span class="test-ad-label">TEST AD</span><h2>Interstitial Ad Placement</h2><p>This is where a real ad can appear between games. It will never interrupt active gameplay or a stock-row deal.</p><button type="button">Continue</button></div>`;
@@ -1214,7 +1242,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.17.14');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.18.0');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
@@ -1253,6 +1281,16 @@ try{
   toast('Startup error');
 }
 })();
+
+
+function addAdFreeDeveloperReset(){
+ let roots=[...document.querySelectorAll('.overlay,.modal')],root=roots.find(r=>/developer/i.test(r.textContent||''));
+ if(!root||root.querySelector('#devResetAdFree'))return;
+ let b=document.createElement('button');b.id='devResetAdFree';b.textContent='Reset Ad-Free Test Purchase';
+ b.onclick=()=>{monetization.adsRemoved=false;saveMonetization();trackEvent('remove_ads_test_reset');status.textContent='Ad-free test purchase reset.'};
+ let panel=root.querySelector('.panel')||root.firstElementChild||root;panel.appendChild(b);
+}
+document.addEventListener('pointerup',()=>setTimeout(addAdFreeDeveloperReset,0),{passive:true});
 
 </script>
 </body>
