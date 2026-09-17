@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire by Grit Games 1.0J.21.4</title>
+<title>Spider Solitaire by Grit Games 1.0J.21.5</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -190,7 +190,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.21.4</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.21.5</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -215,6 +215,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
    Browser behavior remains the default. A future iOS WKWebView host can expose
    window.webkit.messageHandlers.spiderNative without changing the game engine. */
 const NATIVE_BRIDGE_VERSION=1;
+let nativeAdRequest=null,nativeAdSequence=0;
 function nativeHostAvailable(){
  try{return !!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.spiderNative)}
  catch(e){return false}
@@ -224,7 +225,7 @@ function postNative(type,payload={}){
  try{
   window.webkit.messageHandlers.spiderNative.postMessage({
    bridgeVersion:NATIVE_BRIDGE_VERSION,type,payload,
-   gameVersion:'J.21.4'
+   gameVersion:'J.21.5'
   });
   return true
  }catch(e){return false}
@@ -265,6 +266,14 @@ window.SpiderNative={
    if(type==='memoryWarning'){
     saveGame();return true;
    }
+   if(type==='adFinished'||type==='adUnavailable'||type==='adFailed'){
+    if(nativeAdRequest){
+     let pending=nativeAdRequest;nativeAdRequest=null;
+     clearTimeout(pending.timer);
+     pending.resolve({status:type,requestId:payload.requestId||pending.requestId});
+    }
+    return true
+   }
    if(type==='purchaseState'&&typeof payload.adsRemoved==='boolean'){
     monetization.adsRemoved=payload.adsRemoved;saveMonetization();return true
    }
@@ -289,6 +298,23 @@ function nativeAdOpportunity(reason){
 }
 // Passive native policy only. The native shell will observe game-complete/New-Deal
 // events without changing the proven browser game flow.
+function requestNativeInterstitial(reason){
+ if(!nativeHostAvailable()||!nativeAdOpportunity(reason))return null;
+ if(nativeAdRequest)return nativeAdRequest.promise;
+ let requestId='ad-'+Date.now()+'-'+(++nativeAdSequence),resolveRequest;
+ let promise=new Promise(resolve=>{resolveRequest=resolve});
+ let timer=setTimeout(()=>{
+  if(nativeAdRequest&&nativeAdRequest.requestId===requestId){
+   nativeAdRequest=null;
+   resolveRequest({status:'adTimeout',requestId});
+  }
+ },15000);
+ nativeAdRequest={requestId,promise,resolve:resolveRequest,timer};
+ if(!postNative('showInterstitial',{reason,requestId})){
+  clearTimeout(timer);nativeAdRequest=null;return null;
+ }
+ return promise;
+}
 function notifyNativeAdBreak(reason){
  if(!nativeAdOpportunity(reason))return false;
  postNative('adOpportunity',{reason});
@@ -336,7 +362,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.21.4'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.21.5'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -481,7 +507,7 @@ function challengeResultsHTML(summary){
 function showNextDealChallenges(fromWin=false){
  document.querySelector('.win-overlay,.challenge-overlay')?.remove();pendingNextChallenges=chooseDealChallenges();let o=document.createElement('div');o.className='win-overlay challenge-overlay';
  o.innerHTML=`<div class="win-panel postwin-panel next-screen">${fromWin?'<div class="postwin-step">3 of 3 · Next Deal</div>':''}<h2>${fromWin?'Next Deal':'Ready for the Next Deal?'}</h2>${challengesHTML()}<div class="postwin-actions"><button id="startNextDeal">Start Next Deal</button></div></div>`;board.appendChild(o);
- o.querySelector('#startNextDeal').onclick=async()=>{o.remove();if(fromWin)await showTestInterstitial();dailyMode=false;dailyDate=null;newGame()}
+ o.querySelector('#startNextDeal').onclick=async()=>{o.remove();if(fromWin)await showTestInterstitial('game_complete');dailyMode=false;dailyDate=null;newGame()}
 }
 function personalBestHTML(summary){
  if(!summary||!summary.bests)return '';let b=summary.bests,score=gameScore();
@@ -889,8 +915,13 @@ function showCollection(){
  o.innerHTML=`<div class="collection-head"><button class="nav-back">← Back</button><h2>Celebration Collection</h2><button class="collection-close">×</button></div><div class="collection-grid">${celebrations.map(c=>`<div class="collection-tile ${owned.includes(c.id)?'':'locked'}"><div class="collection-icon">${owned.includes(c.id)?c.icon:'?'}</div><div class="collection-name">${owned.includes(c.id)?c.name:'Locked'}</div><div class="collection-state">${owned.includes(c.id)?'Collected':'Win to unlock'}</div></div>`).join('')}</div>`;
  board.appendChild(o);o.querySelector('.collection-close').onclick=()=>o.remove();o.querySelector('.nav-back').onclick=()=>{o.remove();showSettings(settingsReturnScroll)}
 }
-function showTestInterstitial(){
- if(monetization.adsRemoved)return Promise.resolve();
+async function showTestInterstitial(reason='new_deal'){
+ if(monetization.adsRemoved)return;
+ let nativeRequest=requestNativeInterstitial(reason);
+ if(nativeRequest){
+  await nativeRequest;
+  return;
+ }
  return new Promise(resolve=>{
   let o=document.createElement('div');o.className='test-ad-overlay';
   o.innerHTML=`<div class="test-ad-card"><span class="test-ad-label">TEST AD</span><h2>Interstitial Ad Placement</h2><p>This is where a real ad can appear between games. It will never interrupt active gameplay or a stock-row deal.</p><button type="button">Continue</button></div>`;
@@ -1381,7 +1412,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.21.4');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.21.5');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
