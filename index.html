@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire by Grit Games 1.0J.21.3</title>
+<title>Spider Solitaire by Grit Games 1.0J.21.4</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -190,7 +190,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.21.3</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.21.4</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -224,8 +224,27 @@ function postNative(type,payload={}){
  try{
   window.webkit.messageHandlers.spiderNative.postMessage({
    bridgeVersion:NATIVE_BRIDGE_VERSION,type,payload,
-   gameVersion:'J.21.3'
+   gameVersion:'J.21.4'
   });
+  return true
+ }catch(e){return false}
+}
+function nativeLifecycleSave(reason){
+ try{
+  clearTimeout(inactivityTimer);
+  saveGame();
+  postNative('lifecycleSaved',{reason});
+  return true
+ }catch(e){return false}
+}
+function nativeLifecycleResume(reason){
+ try{
+  // The in-memory game remains authoritative while the WKWebView is alive.
+  // Re-render only after the native host says the app is active again.
+  selected=null;
+  render();
+  resetInactivity();
+  postNative('lifecycleResumed',{reason});
   return true
  }catch(e){return false}
 }
@@ -234,8 +253,18 @@ window.SpiderNative={
  isAvailable:nativeHostAvailable,
  receive(type,payload={}){
   try{
-   if(type==='appWillResignActive'||type==='appDidEnterBackground'){save();return true}
-   if(type==='appDidBecomeActive'){render();return true}
+   if(type==='appWillResignActive'||type==='appDidEnterBackground'){
+    return nativeLifecycleSave(type);
+   }
+   if(type==='appDidBecomeActive'){
+    return nativeLifecycleResume(type);
+   }
+   if(type==='appWillTerminate'){
+    return nativeLifecycleSave(type);
+   }
+   if(type==='memoryWarning'){
+    saveGame();return true;
+   }
    if(type==='purchaseState'&&typeof payload.adsRemoved==='boolean'){
     monetization.adsRemoved=payload.adsRemoved;saveMonetization();return true
    }
@@ -307,7 +336,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.21.3'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.21.4'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -1352,7 +1381,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.21.3');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.21.4');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
@@ -1411,8 +1440,14 @@ function showDailyInvite(){
    status.textContent=`Daily Challenge ${dailyDate} · ${difficultyName(prefs.suits)}`;
  };
 }
-window.addEventListener('pagehide',saveGame);
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){clearTimeout(inactivityTimer);saveGame()}else resetInactivity()});
+window.addEventListener('pagehide',()=>nativeLifecycleSave('pagehide'));
+document.addEventListener('visibilitychange',()=>{
+ if(document.visibilityState==='hidden')nativeLifecycleSave('visibilityHidden');
+ else{
+  // Browser/PWA fallback. Native WKWebView also sends appDidBecomeActive.
+  if(!nativeHostAvailable())nativeLifecycleResume('visibilityVisible');
+ }
+});
 try{
   applyPrefs();if(!restoreGame())newGame(true);
   if(!state||state.cols.length!==10){
