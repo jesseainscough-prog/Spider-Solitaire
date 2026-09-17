@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire by Grit Games 1.0J.21.5</title>
+<title>Spider Solitaire by Grit Games 1.0J.21.6</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -190,7 +190,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.21.5</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.21.6</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -216,6 +216,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
    window.webkit.messageHandlers.spiderNative without changing the game engine. */
 const NATIVE_BRIDGE_VERSION=1;
 let nativeAdRequest=null,nativeAdSequence=0;
+let nativePurchaseRequest=null,nativePurchaseSequence=0;
 function nativeHostAvailable(){
  try{return !!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.spiderNative)}
  catch(e){return false}
@@ -225,7 +226,7 @@ function postNative(type,payload={}){
  try{
   window.webkit.messageHandlers.spiderNative.postMessage({
    bridgeVersion:NATIVE_BRIDGE_VERSION,type,payload,
-   gameVersion:'J.21.5'
+   gameVersion:'J.21.6'
   });
   return true
  }catch(e){return false}
@@ -275,7 +276,20 @@ window.SpiderNative={
     return true
    }
    if(type==='purchaseState'&&typeof payload.adsRemoved==='boolean'){
-    monetization.adsRemoved=payload.adsRemoved;saveMonetization();return true
+    monetization.adsRemoved=payload.adsRemoved;saveMonetization();
+    if(payload.adsRemoved)refreshOpenNewDealAfterAdFree();
+    return true
+   }
+   if(type==='purchaseFinished'||type==='purchaseRestored'||type==='purchaseCancelled'||type==='purchaseFailed'){
+    if(nativePurchaseRequest){
+     let pending=nativePurchaseRequest;nativePurchaseRequest=null;
+     clearTimeout(pending.timer);
+     if(type==='purchaseFinished'||type==='purchaseRestored'){
+      monetization.adsRemoved=true;saveMonetization();refreshOpenNewDealAfterAdFree();
+     }
+     pending.resolve({status:type,requestId:payload.requestId||pending.requestId});
+    }
+    return true
    }
   }catch(e){}
   return false
@@ -337,19 +351,53 @@ function showAdFreeSuccess(){
  o.innerHTML=`<div class="panel" role="dialog" aria-modal="true"><h2>PLAY AD FREE</h2><div class="adfree-check">✓</div><p class="adfree-copy">Ad-free play is enabled. Interstitial ads will no longer appear.</p><button type="button" class="adfree-buy">Continue Playing</button></div>`;
  document.body.appendChild(o);let close=()=>o.remove();o.querySelector('.adfree-buy').onclick=close;o.onclick=e=>{if(e.target===o)close()};
 }
+function requestNativePurchase(action='purchase'){
+ if(!nativeHostAvailable())return null;
+ if(nativePurchaseRequest)return nativePurchaseRequest.promise;
+ let requestId='purchase-'+Date.now()+'-'+(++nativePurchaseSequence),resolveRequest;
+ let promise=new Promise(resolve=>{resolveRequest=resolve});
+ let timer=setTimeout(()=>{
+  if(nativePurchaseRequest&&nativePurchaseRequest.requestId===requestId){
+   nativePurchaseRequest=null;
+   resolveRequest({status:'purchaseTimeout',requestId});
+  }
+ },30000);
+ nativePurchaseRequest={requestId,promise,resolve:resolveRequest,timer};
+ let message=action==='restore'?'restoreRemoveAds':'purchaseRemoveAds';
+ if(!postNative(message,{productId:'remove_ads',requestId})){
+  clearTimeout(timer);nativePurchaseRequest=null;return null;
+ }
+ return promise;
+}
 function showAdFreePurchase(){
  if(document.querySelector('.adfree-purchase'))return;
  let o=document.createElement('div');o.className='adfree-purchase';
  o.innerHTML=`<div class="panel" role="dialog" aria-modal="true"><button type="button" class="adfree-close" aria-label="Close">×</button><h2>PLAY AD FREE</h2><p class="adfree-copy">Enjoy Spider Solitaire without interstitial ads. One purchase unlocks ad-free play.</p><div class="adfree-price">$4.99</div><button type="button" class="adfree-buy">Play Ad Free</button><button type="button" class="adfree-restore">Restore Purchase</button><p class="adfree-note">Test purchase for this web build. App Store purchasing will replace this step in the native release.</p></div>`;
  document.body.appendChild(o);let close=()=>o.remove();o.querySelector('.adfree-close').onclick=close;o.onclick=e=>{if(e.target===o)close()};
  o.querySelector('.adfree-buy').onclick=()=>{monetization.adsRemoved=true;saveMonetization();trackEvent('remove_ads_test_purchase');o.remove();showAdFreeSuccess()};
- o.querySelector('.adfree-restore').onclick=()=>{monetization.adsRemoved=true;saveMonetization();trackEvent('remove_ads_test_restore');o.remove();showAdFreeSuccess()};
+ o.querySelector('.adfree-restore').onclick=()=>{o.remove();restoreRemoveAds()};
 }
-function requestRemoveAds(){
- postNative('purchaseRemoveAds',{});
+async function requestRemoveAds(){
  trackEvent('remove_ads_tapped');
  if(monetization.adsRemoved){showAdFreeSuccess();return}
+ let nativeRequest=requestNativePurchase('purchase');
+ if(nativeRequest){
+  let result=await nativeRequest;
+  if(result.status==='purchaseFinished'||result.status==='purchaseRestored')showAdFreeSuccess();
+  return;
+ }
  showAdFreePurchase();
+}
+async function restoreRemoveAds(){
+ if(monetization.adsRemoved){showAdFreeSuccess();return}
+ let nativeRequest=requestNativePurchase('restore');
+ if(nativeRequest){
+  let result=await nativeRequest;
+  if(result.status==='purchaseFinished'||result.status==='purchaseRestored')showAdFreeSuccess();
+  return;
+ }
+ // Browser test fallback mirrors the existing restore behavior.
+ monetization.adsRemoved=true;saveMonetization();trackEvent('remove_ads_test_restore');showAdFreeSuccess();
 }
 const ANALYTICS_KEY='spider-solitaire-analytics-v1';
 function analyticsDefaults(){return {schema:1,createdAt:Date.now(),updatedAt:Date.now(),sessions:0,gameStarts:0,wins:0,hints:0,undos:0,deals:0,completedSuits:0,byDifficulty:{1:{starts:0,wins:0},2:{starts:0,wins:0},4:{starts:0,wins:0}},monetization:{interstitialEligible:0,interstitialShown:0,rewardedEligible:0,rewardedShown:0,removeAdsPurchases:0},events:[]}}
@@ -362,7 +410,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.21.5'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.21.6'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -1412,7 +1460,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.21.5');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.21.6');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
