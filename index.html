@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire by Grit Games 1.0J.20.3</title>
+<title>Spider Solitaire by Grit Games 1.0J.21.0</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -190,7 +190,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.20.3</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.21.0</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -211,6 +211,38 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 /* J.15.0 local analytics/monetization foundation.
    No ads, network tracking, SDKs, or purchases are active yet. */
 
+/* J.21 Native Bridge Foundation
+   Browser behavior remains the default. A future iOS WKWebView host can expose
+   window.webkit.messageHandlers.spiderNative without changing the game engine. */
+const NATIVE_BRIDGE_VERSION=1;
+function nativeHostAvailable(){
+ try{return !!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.spiderNative)}
+ catch(e){return false}
+}
+function postNative(type,payload={}){
+ if(!nativeHostAvailable())return false;
+ try{
+  window.webkit.messageHandlers.spiderNative.postMessage({
+   bridgeVersion:NATIVE_BRIDGE_VERSION,type,payload,
+   gameVersion:'J.21.0'
+  });
+  return true
+ }catch(e){return false}
+}
+window.SpiderNative={
+ bridgeVersion:NATIVE_BRIDGE_VERSION,
+ isAvailable:nativeHostAvailable,
+ receive(type,payload={}){
+  try{
+   if(type==='appWillResignActive'||type==='appDidEnterBackground'){save();return true}
+   if(type==='appDidBecomeActive'){render();return true}
+   if(type==='purchaseState'&&typeof payload.adsRemoved==='boolean'){
+    monetization.adsRemoved=payload.adsRemoved;saveMonetization();return true
+   }
+  }catch(e){}
+  return false
+ }
+};
 const MONETIZATION_KEY='spider-solitaire-monetization-v1';
 const monetization=(()=>{try{return Object.assign({adsRemoved:false},JSON.parse(localStorage.getItem(MONETIZATION_KEY)||'{}'))}catch(e){return {adsRemoved:false}}})();
 function saveMonetization(){try{localStorage.setItem(MONETIZATION_KEY,JSON.stringify(monetization))}catch(e){}}
@@ -220,7 +252,11 @@ function nativeAdOpportunity(reason){
 }
 // Passive native policy only. The native shell will observe game-complete/New-Deal
 // events without changing the proven browser game flow.
-function notifyNativeAdBreak(reason){return nativeAdOpportunity(reason)}
+function notifyNativeAdBreak(reason){
+ if(!nativeAdOpportunity(reason))return false;
+ postNative('adOpportunity',{reason});
+ return true
+}
 const REMOVE_ADS_REMINDER_EVERY=5;
 function shouldOfferRemoveAds(adBreakCount){
  return !monetization.adsRemoved&&adBreakCount>0&&adBreakCount%REMOVE_ADS_REMINDER_EVERY===0;
@@ -247,6 +283,7 @@ function showAdFreePurchase(){
  o.querySelector('.adfree-restore').onclick=()=>{monetization.adsRemoved=true;saveMonetization();trackEvent('remove_ads_test_restore');o.remove();showAdFreeSuccess()};
 }
 function requestRemoveAds(){
+ postNative('purchaseRemoveAds',{});
  trackEvent('remove_ads_tapped');
  if(monetization.adsRemoved){showAdFreeSuccess();return}
  showAdFreePurchase();
@@ -262,7 +299,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.20.3'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.21.0'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -1277,7 +1314,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.20.3');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.21.0');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
