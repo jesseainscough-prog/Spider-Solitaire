@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire by Grit Games 1.0J.21.24</title>
+<title>Spider Solitaire by Grit Games 1.0J.21.25</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--chrome1:#043d29;--chrome2:#032f21;--panel:#ffffff0b;--progress1:#1b7a4e;--progress2:#42a875;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -73,7 +73,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .dev-grid button:active,.dev-close:active{transform:scale(.97)}.dev-close{width:100%;margin-top:12px;color:#efd58e}
 .collection-tile{min-height:118px;border:1px solid #ffffff25;border-radius:12px;background:#ffffff0c;padding:8px;text-align:center;color:#fff}.collection-tile.locked{opacity:.38;filter:grayscale(1)}.collection-icon{height:70px;display:flex;align-items:center;justify-content:center;font-size:36px}.collection-name{font-weight:800;font-size:12px;color:#efd58e}.collection-state{font-size:10px;opacity:.7;margin-top:3px}.stats-overlay{position:absolute;inset:0;z-index:3450;background:#00291d;padding:18px 14px;overflow:auto}.stats-head{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;margin-bottom:14px}.stats-head h2{margin:0;color:#efd58e;font:700 25px Georgia,serif}.stats-close{border:1px solid #ffffff44;background:#ffffff12;color:#fff;border-radius:10px;padding:8px 12px}.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}.stats-tile{border:1px solid #ffffff38;background:#ffffff12;border-radius:12px;padding:10px 6px;text-align:center}.stats-tile span{display:block;font-size:10px;opacity:.65}.stats-tile b{display:block;color:#efd58e;font-size:18px;margin-top:3px}.history-title{color:#efd58e;font:700 17px Georgia,serif;margin:8px 0}.history-row{display:grid;grid-template-columns:52px 1fr 1fr 1fr;gap:6px;padding:9px 7px;border-top:1px solid #ffffff18;font-size:11px}.history-row.win .result{color:#efd58e}.result{font-weight:800}.history-empty{text-align:center;opacity:.6;padding:24px 0}.stats-link{text-decoration:underline;text-underline-offset:2px}
 
-.progress-card{margin:10px 0 14px;padding:13px;border:1px solid #e8c87966;border-radius:13px;background:var(--panel)}.progress-card.progress-tap{width:100%;color:inherit;text-align:left;font:inherit;cursor:pointer}.progress-card.progress-tap:active{transform:scale(.992)}.progress-detail{margin:10px 0 14px;padding:16px;border:1px solid #e8c87966;border-radius:15px;background:var(--panel)}.progress-detail h3{margin:0 0 6px;color:var(--gold);font:700 20px Georgia,serif}.progress-detail p{margin:7px 0;color:#e8ece9;font-size:13px;line-height:1.45}.progress-metric{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}.progress-metric div{padding:11px;border:1px solid #ffffff24;border-radius:11px;background:#ffffff0a}.progress-metric span{display:block;font-size:10px;opacity:.65}.progress-metric b{display:block;margin-top:3px;color:var(--gold);font-size:17px}.progress-earn{margin-top:12px;padding:11px;border-radius:11px;background:color-mix(in srgb,var(--chrome2) 72%,transparent);font-size:12px;line-height:1.45;color:#e6ece8}
+.progress-card{margin:10px 0 14px;padding:13px;border:1px solid #e8c87966;border-radius:13px;background:var(--panel)}.progress-card.progress-tap{width:100%;color:inherit;text-align:left;font:inherit;cursor:pointer;position:relative;padding-right:34px}.progress-card.progress-tap::after{content:"›";position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--gold);font-size:24px;font-weight:700;line-height:1;opacity:.9}.progress-card.progress-tap:active{transform:scale(.992)}.progress-detail{margin:10px 0 14px;padding:16px;border:1px solid #e8c87966;border-radius:15px;background:var(--panel)}.progress-detail h3{margin:0 0 6px;color:var(--gold);font:700 20px Georgia,serif}.progress-detail p{margin:7px 0;color:#e8ece9;font-size:13px;line-height:1.45}.progress-metric{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}.progress-metric div{padding:11px;border:1px solid #ffffff24;border-radius:11px;background:#ffffff0a}.progress-metric span{display:block;font-size:10px;opacity:.65}.progress-metric b{display:block;margin-top:3px;color:var(--gold);font-size:17px}.progress-earn{margin-top:12px;padding:11px;border-radius:11px;background:color-mix(in srgb,var(--chrome2) 72%,transparent);font-size:12px;line-height:1.45;color:#e6ece8}
 .progress-top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}.progress-top b{color:#efd58e;font:700 18px Georgia,serif}.progress-top span{font-size:12px;font-weight:800;color:#efd58e}
 .web-bar{height:12px;margin-top:9px;border-radius:999px;background:var(--chrome2);border:1px solid #ffffff26;overflow:hidden}.web-fill{height:100%;width:0;background:linear-gradient(90deg,var(--progress1),var(--progress2));border-radius:999px;transition:width .9s cubic-bezier(.2,.8,.25,1)}
 .progress-sub{display:flex;justify-content:space-between;margin-top:6px;font-size:10px;opacity:.68}.web-total{font-weight:900;color:#efd58e}
@@ -190,7 +190,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.21.24</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.21.25</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -226,7 +226,7 @@ function postNative(type,payload={}){
  try{
   window.webkit.messageHandlers.spiderNative.postMessage({
    bridgeVersion:NATIVE_BRIDGE_VERSION,type,payload,
-   gameVersion:'J.21.24'
+   gameVersion:'J.21.25'
   });
   return true
  }catch(e){return false}
@@ -410,7 +410,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.21.24'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.21.25'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -1531,7 +1531,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.21.24');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.21.25');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
