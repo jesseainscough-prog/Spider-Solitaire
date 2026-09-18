@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire by Grit Games 1.0J.21.15</title>
+<title>Spider Solitaire by Grit Games 1.0J.21.16</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--chrome1:#043d29;--chrome2:#032f21;--panel:#ffffff0b;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -131,7 +131,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .column .empty-slot{border-color:transparent!important;background:transparent!important;box-shadow:none!important;color:transparent!important}
 
 .new-deal-confirm{position:fixed;inset:0;background:rgba(0,20,13,.72);display:flex;align-items:center;justify-content:center;padding:22px;z-index:3200}
-.new-deal-confirm .panel{width:min(390px,94vw);background:linear-gradient(180deg,#073d2a,#052d20);border:1px solid rgba(232,200,121,.48);border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.5);padding:22px 20px 17px;text-align:center}
+.new-deal-confirm .panel{width:min(390px,94vw);background:linear-gradient(180deg,var(--felt1),var(--felt3));border:1px solid rgba(232,200,121,.48);border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.5);padding:22px 20px 17px;text-align:center}
 .new-deal-confirm h2{margin:0 0 12px;color:var(--gold);font-family:Georgia,serif;letter-spacing:1.5px;font-size:23px}
 .new-deal-confirm p{margin:0 auto 20px;max-width:310px;color:#f7f3e8;line-height:1.4;font-size:16px}
 .new-deal-actions{display:grid;grid-template-columns:1fr 1.35fr;gap:10px}
@@ -190,7 +190,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.21.15</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.21.16</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -226,7 +226,7 @@ function postNative(type,payload={}){
  try{
   window.webkit.messageHandlers.spiderNative.postMessage({
    bridgeVersion:NATIVE_BRIDGE_VERSION,type,payload,
-   gameVersion:'J.21.15'
+   gameVersion:'J.21.16'
   });
   return true
  }catch(e){return false}
@@ -410,7 +410,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.21.15'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.21.16'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -661,9 +661,9 @@ function showSuitChooser(){
   <button class="choice-card ${prefs.suits===4?'selected':''}" data-suits="4"><div class="collection-icon"><span style="color:#fff">♠♣</span><span style="color:#d64a58">♥♦</span></div><b>4 Suits</b><small>${prefs.suits===4?'Selected':'Hard'}</small></button>
  </div>`;
  board.appendChild(o);o.querySelector('.settings-close').onclick=()=>o.remove();o.querySelector('.nav-back').onclick=()=>{o.remove();showSettings(settingsReturnScroll)};
- o.querySelectorAll('[data-suits]').forEach(b=>b.onclick=()=>{let n=+b.dataset.suits;if(n===prefs.suits){o.remove();showSettings(settingsReturnScroll);return}
+ o.querySelectorAll('[data-suits]').forEach(b=>b.onclick=async()=>{let n=+b.dataset.suits;if(n===prefs.suits){o.remove();showSettings(settingsReturnScroll);return}
    let progressed=state&&(state.moves>0||state.elapsed>0||state.completed>0||state.stock.length<50);
-   if(progressed&&!confirm(`Switch to ${n} Suit${n===1?'':'s'}? This will start a new deal.`))return;
+   if(progressed&&!await gameConfirm({title:'CHANGE DIFFICULTY',message:`Switch to ${n} Suit${n===1?'':'s'}? This will start a new deal.`,confirmText:'Start New Deal'}))return;
    dailyMode=false;dailyDate=null;prefs.suits=n;setPrefs(prefs);o.remove();newGame();showSettings(settingsReturnScroll);
  })
 }
@@ -737,16 +737,16 @@ function showSettings(restoreScroll=0){
  const refreshSettings=()=>{let y=o.scrollTop;o.remove();showSettings(y)};
  o.querySelector('.settings-close').onclick=()=>o.remove();
  let removeAdsBtn=o.querySelector('#removeAdsBtn');if(removeAdsBtn)removeAdsBtn.onclick=requestRemoveAds;
- let db=o.querySelector('#startDaily');if(db)db.onclick=()=>{
+ let db=o.querySelector('#startDaily');if(db)db.onclick=async()=>{
   if(dailyMode&&dailyDate===dateKey()&&!dailyChallengeInfo().completed){o.remove();status.textContent=`Daily Challenge ${dailyDate} · ${difficultyName(prefs.suits)}`;return}
   let progressed=state&&(state.moves>0||state.elapsed>0||state.completed>0||state.stock.length<50);
-  if(progressed&&!confirm('Start today’s Daily Challenge? This will replace your current game.'))return;
+  if(progressed&&!await gameConfirm({title:'START DAILY CHALLENGE?',message:'Your current game will be replaced.',confirmText:'Start Challenge'}))return;
   if(progressed&&!developerGame)recordFinishedGame(false);
   dailyMode=true;dailyDate=dateKey();o.remove();newGame();
   status.textContent=`Daily Challenge ${dailyDate} · ${difficultyName(prefs.suits)}`;
  };
- let rb=o.querySelector('#restartDaily');if(rb)rb.onclick=()=>{
-  if(!confirm('Restart today’s Daily Challenge? Your current Daily Challenge progress will be lost.'))return;
+ let rb=o.querySelector('#restartDaily');if(rb)rb.onclick=async()=>{
+  if(!await gameConfirm({title:'RESTART DAILY CHALLENGE?',message:'Your current Daily Challenge progress will be lost.',confirmText:'Restart Challenge'}))return;
   dailyMode=true;dailyDate=dateKey();o.remove();newGame();
   status.textContent=`Daily Challenge ${dailyDate} · ${difficultyName(prefs.suits)}`;
  };
@@ -889,8 +889,8 @@ function devRealProgressTest(){
  let summary={before,after:p.webs,earned,lines,unlocked,beforeLevel,afterLevel:levelInfo(p.webs)};
  let o=document.createElement('div');o.className='win-overlay';o.innerHTML=`<div class="win-panel"><h2>Saved Reward Test</h2>${rewardSummaryHTML(summary)}<p>These test rewards were saved. Close/reopen the app or open Achievements to verify persistence.</p><button id="closeRealProgress">Close</button><button id="openRealAchievements" class="collection-btn">Achievements</button></div>`;board.appendChild(o);requestAnimationFrame(()=>requestAnimationFrame(()=>{let f=o.querySelector('.reward-progress');if(f)f.style.width=(+f.dataset.pct||0)+'%'}));o.querySelector('#closeRealProgress').onclick=()=>{o.remove();resetInactivity()};o.querySelector('#openRealAchievements').onclick=()=>{o.remove();showAchievements()}
 }
-function devResetProgression(){
- if(!confirm('Reset all Webs, levels and achievements? This does not reset game stats or celebration collection.'))return;
+async function devResetProgression(){
+ if(!await gameConfirm({title:'RESET PROGRESSION?',message:'Reset all Webs, levels and achievements? Game stats and your celebration collection will not be reset.',confirmText:'Reset'}))return;
  try{localStorage.removeItem(PROGRESS_KEY)}catch(e){}
  status.textContent='Developer: Webs, levels and achievements reset.';toast('Progression reset');document.querySelector('.dev-overlay')?.remove();resetInactivity()
 }
@@ -1487,6 +1487,23 @@ function confirmNewDeal(){
   o.onclick=e=>{if(e.target===o)finish(false)};
  });
 }
+function gameConfirm({title,message,confirmText='Confirm',cancelText='Cancel'}){
+ return new Promise(resolve=>{
+  let o=document.createElement('div');o.className='new-deal-confirm game-confirm';
+  o.innerHTML=`<div class="panel" role="dialog" aria-modal="true">
+   <h2>${title}</h2><p>${message}</p>
+   <div class="new-deal-actions">
+    <button type="button" class="new-deal-cancel">${cancelText}</button>
+    <button type="button" class="new-deal-start">${confirmText}</button>
+   </div>
+  </div>`;
+  document.body.appendChild(o);
+  const finish=v=>{o.remove();resolve(v)};
+  o.querySelector('.new-deal-cancel').onclick=()=>finish(false);
+  o.querySelector('.new-deal-start').onclick=()=>finish(true);
+  o.onclick=e=>{if(e.target===o)finish(false)};
+ });
+}
 const askNew=async()=>{
  cancelHint();if(!hasProgress()){showNextDealChallenges();return}
  if(await confirmNewDeal()){
@@ -1500,7 +1517,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.21.15');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.21.16');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
@@ -1551,9 +1568,9 @@ function showDailyInvite(){
  o.innerHTML=`<div class="daily-invite-card"><h2>Daily Challenge</h2><p>Today’s <b>${difficultyName(prefs.suits)}</b> challenge is ready.<br>🔥 Current win streak: <b>${winDayStreak()} day${winDayStreak()===1?'':'s'}</b></p><div class="daily-invite-actions"><button class="daily-later">Maybe Later</button><button class="daily-play">Play Challenge</button></div></div>`;
  board.appendChild(o);
  o.querySelector('.daily-later').onclick=()=>o.remove();
- o.querySelector('.daily-play').onclick=()=>{
+ o.querySelector('.daily-play').onclick=async()=>{
    let progressed=hasProgress();
-   if(progressed&&!confirm('Start today’s Daily Challenge? This will replace your current game.'))return;
+   if(progressed&&!await gameConfirm({title:'START DAILY CHALLENGE?',message:'Your current game will be replaced.',confirmText:'Start Challenge'}))return;
    if(progressed&&!developerGame)recordFinishedGame(false);
    dailyMode=true;dailyDate=dateKey();o.remove();newGame();
    status.textContent=`Daily Challenge ${dailyDate} · ${difficultyName(prefs.suits)}`;
