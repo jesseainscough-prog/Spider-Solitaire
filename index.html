@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire by Nightpine Games 1.0J.21.27</title>
+<title>Spider Solitaire by Nightpine Games 1.0J.21.28</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--chrome1:#043d29;--chrome2:#032f21;--panel:#ffffff0b;--progress1:#1b7a4e;--progress2:#42a875;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -31,8 +31,9 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .card.face.run-muted .card-rank-index,.card.face.run-muted .card-suit-index{opacity:.68}
 .card.face.run-active{filter:none}
 
-/* J.21.27 manual long-column compression; visual only. */
+/* J.21.28 manual long-column compression; visual only. */
 .column.column-collapsed .card{transition:top .16s ease}
+.collapse-hit-zone{position:absolute;left:0;right:0;z-index:700;background:transparent;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 
 
 /* J.16.1 rigid movement layer; J.16.0 stationary tableau stays frozen. */
@@ -187,7 +188,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.21.27</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.21.28</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -223,7 +224,7 @@ function postNative(type,payload={}){
  try{
   window.webkit.messageHandlers.spiderNative.postMessage({
    bridgeVersion:NATIVE_BRIDGE_VERSION,type,payload,
-   gameVersion:'J.21.26'
+   gameVersion:'J.21.28'
   });
   return true
  }catch(e){return false}
@@ -407,7 +408,7 @@ function difficultyMetric(kind){try{let s=String((typeof prefs!=='undefined'&&pr
 function monetizationEvent(kind,data={}){if(typeof appAnalytics.monetization[kind]==='number')appAnalytics.monetization[kind]++;trackEvent('monetization_'+kind,data)}
 function analyticsSnapshot(){return JSON.parse(JSON.stringify(appAnalytics))}
 function resetAnalytics(){appAnalytics=analyticsDefaults();saveAnalytics()}
-appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.21.26'});
+appAnalytics.sessions++;saveAnalytics();trackEvent('session_start',{version:'J.21.28'});
 (() => {
 const $=id=>document.getElementById(id), board=$('board'), columnsEl=$('columns'), stockEl=$('stock'), stockControl=$('stockControl'), completedEl=$('completed'), status=$('status'), movesEl=$('moves'), scoreEl=$('score'), timerEl=$('timer'), undoBtn=$('undo'), hintBtn=$('hint'), newBottom=$('newBottom'), newBtn=$('newGameTop'), hintCounter=$('hintCounter'), toastEl=$('toast');
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], val=r=>ranks.indexOf(r)+1;
@@ -738,12 +739,15 @@ function showSettings(restoreScroll=0){
     :'<b>Remove interstitial ads</b><small>Enjoy uninterrupted games with a one-time ad-free purchase.</small><button type="button" id="removeAdsBtn">Play Ad Free — One Time Purchase</button><small>You can restore your purchase anytime.</small>'}
   </div>
  </div>
+ <div class="settings-section"><h3>Developer</h3>
+  <button class="settings-row" id="developerModeBtn"><span><b>Developer Mode</b><br><span>Load test deals and development tools · excluded from player progress</span></span><span class="chev">›</span></button>
+ </div>
 `;
  board.appendChild(o);
  if(restoreScroll)o.scrollTop=restoreScroll;
  const refreshSettings=()=>{let y=o.scrollTop;o.remove();showSettings(y)};
  o.querySelector('.settings-close').onclick=()=>o.remove();
- let removeAdsBtn=o.querySelector('#removeAdsBtn');if(removeAdsBtn)removeAdsBtn.onclick=requestRemoveAds;
+ let removeAdsBtn=o.querySelector('#removeAdsBtn');if(removeAdsBtn)removeAdsBtn.onclick=requestRemoveAds;let developerModeBtn=o.querySelector('#developerModeBtn');if(developerModeBtn)developerModeBtn.onclick=()=>{o.remove();showDeveloper()};
  let db=o.querySelector('#startDaily');if(db)db.onclick=async()=>{
   if(db.disabled)return;
   if(dailyMode&&dailyDate===dateKey()&&!dailyChallengeInfo().completed){o.remove();status.textContent=`Daily Challenge ${dailyDate} · ${difficultyName(prefs.suits)}`;return}
@@ -911,12 +915,25 @@ function devProgressTest(){
  let summary={before,after,earned:14,beforeLevel:b,afterLevel:a,lines:[['Game won',3],['8 completed suits',8],['Move challenge',2],['Time challenge',1]],unlocked:[{name:'First Web'}]};
  let o=document.createElement('div');o.className='win-overlay';o.innerHTML=`<div class="win-panel"><h2>Progress Preview</h2>${rewardSummaryHTML(summary)}<p>This preview does not change your saved Webs or achievements.</p><button id="closeProgress">Close</button><button id="openAchievements" class="collection-btn">Achievements</button></div>`;board.appendChild(o);requestAnimationFrame(()=>requestAnimationFrame(()=>{let f=o.querySelector('.reward-progress');if(f)f.style.width=(+f.dataset.pct||0)+'%'}));o.querySelector('#closeProgress').onclick=()=>{o.remove();resetInactivity()};o.querySelector('#openAchievements').onclick=()=>{o.remove();showAchievements()}
 }
+function devCollapseTest(){
+ developerGame=true;developerStuckTest=false;dailyMode=false;dailyDate=null;cancelHint();closeStuckPopup();clearTimeout(inactivityTimer);stopClock();started=false;history=[];selected=null;animating=false;lastStuckSignature='';collapsedColumns.clear();
+ const C=(r,s='♠')=>makeCard(r,true,s),D=(r,s='♠')=>makeCard(r,false,s);
+ state={cols:Array.from({length:10},()=>[]),stock:[],moves:0,completed:0,completedSuits:[],elapsed:0,undoUsed:false,challengeIds:[],maxSameSuitStackMoved:0,dealsUsed:0,firstSuitDealsUsed:null};
+ state.cols[0]=[D('K'),D('8'),C('Q','♥'),C('8','♣'),C('6','♥'),C('5','♠'),C('4','♠'),C('3','♠')];
+ state.cols[1]=[D('A'),C('K','♦'),C('10','♣'),C('7','♥'),C('6','♥'),C('5','♥')];
+ state.cols[2]=[D('9'),D('2'),D('J'),C('Q','♣'),C('9','♦'),C('8','♠'),C('7','♠')];
+ state.cols[3]=[C('K','♠'),C('Q','♠'),C('J','♠'),C('10','♠')];
+ state.cols[4]=[D('5'),C('J','♥'),C('9','♣'),C('8','♦'),C('7','♣'),C('6','♣')];
+ state.cols[5]=[C('10','♦'),C('9','♦'),C('8','♦')];state.cols[6]=[];
+ state.cols[7]=[D('4'),D('3'),C('Q','♦'),C('6','♣'),C('5','♥'),C('4','♥')];state.cols[8]=[C('J','♠')];state.cols[9]=[];
+ status.textContent='Developer: Collapse Test. Tap dimmed face-up cards; face-down cards must never compress.';render();resetInactivity()
+}
 function showDeveloper(){
  document.querySelector('.dev-overlay')?.remove();
  let o=document.createElement('div');o.className='dev-overlay';
  o.innerHTML=`<div class="dev-panel"><h2>Developer Mode</h2><p>Testing tools only. Long-press the version number anytime to reopen this panel.</p>
  <div class="dev-grid">
- <button data-dev="near">Near Win</button><button data-dev="win">Instant Win</button>
+ <button data-dev="collapse">Collapse Test Deal</button><button data-dev="near">Near Win</button><button data-dev="win">Instant Win</button>
  <button data-dev="complete">Test Completed Suit</button><button data-dev="stuck-stock">No Moves · Stock Available</button>
  <button data-dev="stuck-empty">No Moves · Stock Empty</button><button data-dev="progress">Test Progress Reward</button><button data-dev="real-progress">Test Real Reward</button><button data-dev="reset-progress">Reset Progression</button><button data-dev="achievements">Open Achievements</button><button data-dev="collection">Open Collection</button><button data-dev="stats">Open Stats</button>
  <button data-preview="spider">Test Spider Shuffle</button><button data-preview="wave">Test Royal Wave</button>
@@ -925,7 +942,7 @@ function showDeveloper(){
  </div><button class="dev-close">Close</button></div>`;
  board.appendChild(o);
  o.querySelector('.dev-close').onclick=()=>o.remove();
- o.querySelector('[data-dev="near"]').onclick=()=>{o.remove();devNearWin()};
+ o.querySelector('[data-dev="collapse"]').onclick=()=>{o.remove();devCollapseTest()};o.querySelector('[data-dev="near"]').onclick=()=>{o.remove();devNearWin()};
  o.querySelector('[data-dev="win"]').onclick=()=>{o.remove();devInstantWin()};
  o.querySelector('[data-dev="complete"]').onclick=()=>{o.remove();devCompletionTest()};
  o.querySelector('[data-dev="stuck-stock"]').onclick=()=>{o.remove();devNoMovesTest(true)};
@@ -966,7 +983,7 @@ async function animateOpeningDeal(){
  flyers.forEach(({f,real})=>{f.remove();real.style.visibility=''});
  render();animating=false;resetInactivity()
 }
-function newGame(animateDeal=true){metric('gameStarts');difficultyMetric('starts');trackEvent('game_start');dismissStuckBanner();cancelHint();closeStuckPopup();pendingProgressSummary=null;lastStuckSignature='';developerStuckTest=false;stopClock();started=false;history=[];selected=null;developerGame=false;let d=deck(),rng=dailyMode?seededRandom(seedFromString(`spider-${dailyDate}-${prefs.suits}`)):Math.random;shuffle(d,rng);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,completedSuits:[],elapsed:0,undoUsed:false,challengeIds:(pendingNextChallenges||chooseDealChallenges()).slice(),maxSameSuitStackMoved:0,dealsUsed:0,firstSuitDealsUsed:null};pendingNextChallenges=null;status.textContent=`${prefs.suits===4?'4-Suit':prefs.suits===2?'2-Suit':'1-Suit'} game. Tap a movable card or stack.`;render();if(animateDeal)animateOpeningDeal();else resetInactivity()}
+function newGame(animateDeal=true){collapsedColumns.clear();metric('gameStarts');difficultyMetric('starts');trackEvent('game_start');dismissStuckBanner();cancelHint();closeStuckPopup();pendingProgressSummary=null;lastStuckSignature='';developerStuckTest=false;stopClock();started=false;history=[];selected=null;developerGame=false;let d=deck(),rng=dailyMode?seededRandom(seedFromString(`spider-${dailyDate}-${prefs.suits}`)):Math.random;shuffle(d,rng);let cols=Array.from({length:10},()=>[]);for(let r=0;r<6;r++)for(let c=0;c<10;c++)if(r<5||c<4)cols[c].push(d.pop());cols.forEach(c=>c[c.length-1].faceUp=true);state={cols,stock:d,moves:0,completed:0,completedSuits:[],elapsed:0,undoUsed:false,challengeIds:(pendingNextChallenges||chooseDealChallenges()).slice(),maxSameSuitStackMoved:0,dealsUsed:0,firstSuitDealsUsed:null};pendingNextChallenges=null;status.textContent=`${prefs.suits===4?'4-Suit':prefs.suits===2?'2-Suit':'1-Suit'} game. Tap a movable card or stack.`;render();if(animateDeal)animateOpeningDeal();else resetInactivity()}
 function movable(c,i){let a=state.cols[c];if(i<0||!a[i]?.faceUp)return false;for(let x=i;x<a.length-1;x++)if(!a[x+1].faceUp||val(a[x].rank)!==val(a[x+1].rank)+1||(prefs.suits>1&&(a[x].suit||'♠')!==(a[x+1].suit||'♠')))return false;return true}
 function legal(f,i,t){if(f===t||!movable(f,i))return false;let m=state.cols[f][i],d=state.cols[t];return !d.length||val(d[d.length-1].rank)===val(m.rank)+1}
 function flip(c){let a=state.cols[c];if(a.length&&!a[a.length-1].faceUp){a[a.length-1].faceUp=true;a[a.length-1]._justFlipped=true}}
@@ -1419,26 +1436,15 @@ function activeRunStart(cards){
  return i;
 }
 const collapsedColumns=new Set();
-function collapsibleFaceUpStart(cards,runStart){
- let s=runStart;
- while(s>0&&cards[s-1]&&cards[s-1].faceUp)s--;
- return s;
-}
+function collapsibleFaceUpStart(cards,runStart){let s=runStart;while(s>0&&cards[s-1]?.faceUp)s--;return s}
 function tableauPositions(cards,runStart,faceUpStart,collapsed){
- let ys=offsets(cards);
- if(!collapsed||runStart-faceUpStart<2)return ys;
- let normalGap=runStart>0?ys[runStart]-ys[runStart-1]:0;
- let compactGap=Math.max(7,Math.min(11,normalGap*.4||9));
- let saved=0;
- for(let i=faceUpStart+1;i<runStart;i++){
-  let gap=ys[i]-ys[i-1];
-  saved+=Math.max(0,gap-compactGap);
-  ys[i]-=saved;
- }
- for(let i=runStart;i<ys.length;i++)ys[i]-=saved;
- return ys;
+ let ys=offsets(cards);if(!collapsed||runStart-faceUpStart<2)return ys;let saved=0,compactGap=9;
+ for(let i=faceUpStart+1;i<runStart;i++){let gap=ys[i]-ys[i-1];saved+=Math.max(0,gap-compactGap);ys[i]-=saved}
+ for(let i=runStart;i<ys.length;i++)ys[i]-=saved;return ys
 }
-function render(){if(modeLabel)modeLabel.textContent=dailyMode?`Daily Challenge • ${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'}`:`${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'} • ${prefs.smartTap?'Smart Tap':'Manual Tap'}`;columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let runStart=activeRunStart(cards),faceUpStart=collapsibleFaceUpStart(cards,runStart),canCollapse=(runStart-faceUpStart)>=2,isCollapsed=canCollapse&&collapsedColumns.has(ci),ys=tableauPositions(cards,runStart,faceUpStart,isCollapsed);if(isCollapsed)col.classList.add('column-collapsed');if(!canCollapse)collapsedColumns.delete(ci);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');if(!card.faceUp)e.style.background=cardBackStyle(prefs.cardBack);e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.classList.add('has-index');e.classList.add(i>=runStart?'run-active':'run-muted');e.innerHTML=faceHTML(card);if(i<cards.length-1)e.classList.add('covered');else e.classList.remove('covered');if(canCollapse&&i>=faceUpStart&&i<runStart){e.addEventListener('pointerdown',ev=>{ev.preventDefault();ev.stopPropagation();resetInactivity()});e.addEventListener('pointerup',ev=>{ev.preventDefault();ev.stopPropagation();if(collapsedColumns.has(ci))collapsedColumns.delete(ci);else collapsedColumns.add(ci);clearSelection();render()})}else{e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>{pointerUp(ev,ci,i);if(!prefs.smartTap&&selected&&selected.col!==ci){ev.stopPropagation();tapDest(ci)}})}}col.appendChild(e)});col.addEventListener('pointerup',e=>{resetInactivity();if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});
+function toggleColumnCollapse(ci){let cards=state.cols[ci]||[],runStart=activeRunStart(cards),faceUpStart=collapsibleFaceUpStart(cards,runStart);if(runStart-faceUpStart<2)return;if(collapsedColumns.has(ci))collapsedColumns.delete(ci);else collapsedColumns.add(ci);selected=null;render();resetInactivity()}
+function render(){if(modeLabel)modeLabel.textContent=dailyMode?`Daily Challenge • ${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'}`:`${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'} • ${prefs.smartTap?'Smart Tap':'Manual Tap'}`;columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let runStart=activeRunStart(cards),faceUpStart=collapsibleFaceUpStart(cards,runStart),canCollapse=(runStart-faceUpStart)>=2,isCollapsed=canCollapse&&collapsedColumns.has(ci),ys=tableauPositions(cards,runStart,faceUpStart,isCollapsed);if(isCollapsed)col.classList.add('column-collapsed');if(!canCollapse)collapsedColumns.delete(ci);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');if(!card.faceUp)e.style.background=cardBackStyle(prefs.cardBack);e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.classList.add('has-index');e.classList.add(i>=runStart?'run-active':'run-muted');e.innerHTML=faceHTML(card);if(i<cards.length-1)e.classList.add('covered');else e.classList.remove('covered');e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>{pointerUp(ev,ci,i);if(!prefs.smartTap&&selected&&selected.col!==ci){ev.stopPropagation();tapDest(ci)}})}col.appendChild(e)});
+if(canCollapse){let hit=document.createElement('div');hit.className='collapse-hit-zone';let top=ys[faceUpStart],bottom=runStart<ys.length?ys[runStart]:ys[runStart-1]+24;hit.style.top=top+'px';hit.style.height=Math.max(18,bottom-top)+'px';hit.addEventListener('pointerdown',ev=>{ev.preventDefault();ev.stopPropagation()});hit.addEventListener('pointerup',ev=>{ev.preventDefault();ev.stopPropagation();toggleColumnCollapse(ci)});col.appendChild(hit)}col.addEventListener('pointerup',e=>{resetInactivity();if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});
 let liveCol=columnsEl.querySelector('.column'),liveW=liveCol?liveCol.getBoundingClientRect().width:0;
 if(liveW>0){
  document.documentElement.style.setProperty('--live-card-w',liveW+'px');
@@ -1548,7 +1554,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.21.27');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.21.28');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
