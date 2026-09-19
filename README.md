@@ -1,39 +1,60 @@
-# Spider Solitaire 1.0D
+# Nightpine Spider Solitaire
 
-Playable 1-suit Spider Solitaire prototype.
+**Classic Cards. Modern Strategy.**
 
-## Included in 1.0D
-- Correct 104-card 1-suit Spider deck
-- Correct 54-card opening deal
-- Compact face-down card spacing
-- Smart single-tap moves
-- Manual drag-and-drop
-- Manual move fallback to empty columns
-- Undo
-- Hint highlighting source and destination
-- Stock dealing
-- Automatic exposed-card flips
-- Automatic K-to-A completed-run removal
-- Score, move counter, timer
-- New Game control
-- Responsive phone layout
+Nightpine Spider Solitaire is a polished take on classic Spider Solitaire, built by **Nightpine Games**.
 
-## Run locally
-Open `index.html` in a browser.
+## Current Build
 
-For the most reliable local testing, run a tiny local web server from the folder, for example:
+**Browser baseline: J.21.31**
 
-```bash
-python -m http.server 8000
-```
+J.21.31 is the current approved browser build and the baseline for native iOS packaging.
 
-Then browse to `http://localhost:8000`.
+## Features
 
-## GitHub
-Upload all four files to the root of your `Spider-Solitaire` repository:
-- `index.html`
-- `styles.css`
-- `app.js`
-- `README.md`
+- 1-Suit, 2-Suit, and 4-Suit Spider Solitaire
+- Daily Challenges
+- Smart Tap and drag-and-drop card movement
+- Intelligent Hint system
+- Animated Undo
+- Manual long-column collapse and expand
+- Completed-suit animations and win celebrations
+- Player progression, levels, and Webs
+- Achievements and gameplay statistics
+- No-moves detection and recovery flow
+- Persistent settings and game progress
+- Developer Mode with purpose-built QA test deals
+- Mobile-first interface designed for iPhone
 
-If using GitHub Pages, set Pages to deploy from the repository branch/root and this prototype can run as a web app.
+## Game Rules
+
+- 104-card Spider Solitaire deck
+- Opening tableau contains 54 cards: 6 cards in each of the first 4 columns and 5 cards in each of the remaining 6
+- Stock contains 50 cards, dealt in 5 rows of 10
+- Completed sequences run King through Ace in the same suit
+- In multi-suit games, movable sequences must be descending and same-suit
+- Cards may be moved to an empty column or onto a card exactly one rank higher
+- Stock dealing is allowed even when tableau columns are empty
+
+## Development Status
+
+The browser game has completed structured gameplay QA. J.21.31 includes the approved manual long-column collapse/expand feature and is frozen as the reference implementation while native iOS packaging is prepared.
+
+The native version will preserve the approved browser gameplay while adding native iOS haptics, StoreKit purchase and restore, Google AdMob interstitials, Google UMP consent handling, lifecycle integration, TestFlight, and App Store distribution.
+
+## Nightpine Games
+
+Nightpine Games is operated by **UTV Grit Garage Co LLC, doing business as Nightpine Games**.
+
+Website: https://nightpinegames.com/
+
+Support: https://nightpinegames.com/support.html
+
+Privacy: https://nightpinegames.com/privacy.html
+
+Support email: support@nightpinegames.com
+
+---
+
+**Nightpine Games**  
+*Great Games Go Further.*
