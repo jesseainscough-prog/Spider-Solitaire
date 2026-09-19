@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#06462e">
-<title>Spider Solitaire by Nightpine Games 1.0J.21.26</title>
+<title>Spider Solitaire by Nightpine Games 1.0J.21.27</title>
 <style>
 :root{--felt1:#075534;--felt2:#06462e;--felt3:#043723;--shell:#0b2018;--top:#00271a;--chrome1:#043d29;--chrome2:#032f21;--panel:#ffffff0b;--progress1:#1b7a4e;--progress2:#42a875;--gold:#e8c879;--cream:#fbfaf5}
 *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--shell);color:#fff;font-family:Arial,sans-serif}
@@ -30,6 +30,12 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
 .card.face.run-muted{filter:brightness(.72) saturate(.68);color:#3b3b3b}
 .card.face.run-muted .card-rank-index,.card.face.run-muted .card-suit-index{opacity:.68}
 .card.face.run-active{filter:none}
+
+/* J.21.27 manual long-column compression; visual only. */
+.column-collapse-toggle{position:absolute;right:1px;z-index:900;width:18px;height:18px;padding:0;border:1px solid #e8c87999;border-radius:999px;background:#063d2ddd;color:#efd58e;font:900 13px/16px Arial,sans-serif;text-align:center;box-shadow:0 1px 4px #0008;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.column-collapse-toggle:active{transform:scale(.92)}
+.column.column-collapsed .card{transition:top .16s ease}
+
 
 /* J.16.1 rigid movement layer; J.16.0 stationary tableau stays frozen. */
 .motion-stack.moving-rigid{pointer-events:none!important;contain:layout paint!important;isolation:isolate;filter:none!important;will-change:transform;backface-visibility:hidden;-webkit-backface-visibility:hidden}
@@ -183,7 +189,7 @@ body{padding:10px;overscroll-behavior:none;touch-action:manipulation}
   </div>
   <button id="newGameTop" class="icon-btn" aria-label="New game">↻</button>
 </header>
-<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.21.26</span></div>
+<div class="subbar"><span id="modeLabel">1 Suit • Smart Tap</span><span>v1.0J.21.27</span></div>
 <section id="board" class="board">
   <div class="watermark">♠</div>
   <div id="columns" class="columns"></div>
@@ -1414,7 +1420,22 @@ function activeRunStart(cards){
  }
  return i;
 }
-function render(){if(modeLabel)modeLabel.textContent=dailyMode?`Daily Challenge • ${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'}`:`${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'} • ${prefs.smartTap?'Smart Tap':'Manual Tap'}`;columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let ys=offsets(cards),runStart=activeRunStart(cards);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');if(!card.faceUp)e.style.background=cardBackStyle(prefs.cardBack);e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.classList.add('has-index');e.classList.add(i>=runStart?'run-active':'run-muted');e.innerHTML=faceHTML(card);if(i<cards.length-1)e.classList.add('covered');else e.classList.remove('covered');e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>{pointerUp(ev,ci,i);if(!prefs.smartTap&&selected&&selected.col!==ci){ev.stopPropagation();tapDest(ci)}})}col.appendChild(e)});col.addEventListener('pointerup',e=>{resetInactivity();if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});
+const collapsedColumns=new Set();
+function tableauPositions(cards,runStart,collapsed){
+ let ys=offsets(cards);
+ if(!collapsed||runStart<=1)return ys;
+ let normalGap=runStart>0?ys[runStart]-ys[runStart-1]:0;
+ let compactGap=Math.max(7,Math.min(11,normalGap*.4||9));
+ let saved=0;
+ for(let i=1;i<runStart;i++){
+  let gap=ys[i]-ys[i-1];
+  saved+=Math.max(0,gap-compactGap);
+  ys[i]-=saved;
+ }
+ for(let i=runStart;i<ys.length;i++)ys[i]-=saved;
+ return ys;
+}
+function render(){if(modeLabel)modeLabel.textContent=dailyMode?`Daily Challenge • ${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'}`:`${prefs.suits===4?'4 Suits':prefs.suits===2?'2 Suits':'1 Suit'} • ${prefs.smartTap?'Smart Tap':'Manual Tap'}`;columnsEl.innerHTML='';state.cols.forEach((cards,ci)=>{let col=document.createElement('div');col.className='column';col.dataset.col=ci;let runStart=activeRunStart(cards),canCollapse=runStart>=3&&cards.length>=7,isCollapsed=canCollapse&&collapsedColumns.has(ci),ys=tableauPositions(cards,runStart,isCollapsed);if(isCollapsed)col.classList.add('column-collapsed');if(!canCollapse)collapsedColumns.delete(ci);if(!cards.length){let e=document.createElement('div');e.className='empty-slot';col.appendChild(e)}cards.forEach((card,i)=>{let e=document.createElement('div');e.className='card '+(card.faceUp?'face':'back')+(card._justFlipped?' just-flipped':'');if(!card.faceUp)e.style.background=cardBackStyle(prefs.cardBack);e.style.top=ys[i]+'px';e.style.zIndex=i+1;e.dataset.col=ci;e.dataset.index=i;if(selected&&selected.col===ci&&i>=selected.index)e.classList.add('selected');if(card.faceUp){e.classList.add('has-index');e.classList.add(i>=runStart?'run-active':'run-muted');e.innerHTML=faceHTML(card);if(i<cards.length-1)e.classList.add('covered');else e.classList.remove('covered');e.addEventListener('pointerdown',ev=>pointerDown(ev,ci,i,e));e.addEventListener('pointerup',ev=>{pointerUp(ev,ci,i);if(!prefs.smartTap&&selected&&selected.col!==ci){ev.stopPropagation();tapDest(ci)}})}col.appendChild(e)});if(canCollapse){let t=document.createElement('button');t.type='button';t.className='column-collapse-toggle';t.textContent=isCollapsed?'⌄':'⌃';t.setAttribute('aria-label',isCollapsed?'Expand column':'Collapse inactive cards');let anchorIndex=Math.max(0,runStart-1);t.style.top=Math.max(0,(ys[anchorIndex]||0)-20)+'px';t.addEventListener('pointerdown',ev=>ev.stopPropagation());t.addEventListener('pointerup',ev=>{ev.preventDefault();ev.stopPropagation();if(collapsedColumns.has(ci))collapsedColumns.delete(ci);else collapsedColumns.add(ci);render()});col.appendChild(t)}col.addEventListener('pointerup',e=>{resetInactivity();if(e.target===col||e.target.classList.contains('empty-slot'))tapDest(ci)});columnsEl.appendChild(col)});
 let liveCol=columnsEl.querySelector('.column'),liveW=liveCol?liveCol.getBoundingClientRect().width:0;
 if(liveW>0){
  document.documentElement.style.setProperty('--live-card-w',liveW+'px');
@@ -1524,7 +1545,7 @@ $('settings').onclick=()=>{resetInactivity();cancelHint();showSettings()};
 
 let devPressTimer=null;
 const modeLabel=document.getElementById('modeLabel');
-const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.21.26');
+const versionEl=[...document.querySelectorAll('.subbar span,.subbar div')].find(e=>e.textContent.trim()==='v1.0J.21.27');
 if(versionEl){
  const beginDev=()=>{clearTimeout(devPressTimer);devPressTimer=setTimeout(showDeveloper,1800)};
  const cancelDev=()=>{clearTimeout(devPressTimer);devPressTimer=null};
